@@ -1,0 +1,15 @@
+syntax = "proto3";
+package api;
+
+option go_package = "./api";
+
+service Rpc {
+  rpc list (ListRequest) returns (ListReply) {};
+}
+
+message ListRequest {
+}
+
+message ListReply {
+  repeated string names = 1;
+}

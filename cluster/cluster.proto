@@ -1,0 +1,21 @@
+syntax = "proto3";
+package cluster;
+
+option go_package = "./cluster";
+
+service Rpc {
+  rpc join (stream JoinRequest) returns (stream JoinReply) {};
+}
+
+message AgentInfo {
+  uint32 port = 1;
+}
+
+message JoinRequest {
+  string hostname = 1;
+  AgentInfo agentInfo = 2;
+}
+
+message JoinReply {
+  string uuid = 1;
+}
