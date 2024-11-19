@@ -22,10 +22,9 @@ const (
 
 type AgentInfo struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	Port uint32 `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
+	Port          int64 `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AgentInfo) Reset() {
@@ -58,7 +57,7 @@ func (*AgentInfo) Descriptor() ([]byte, []int) {
 	return file_cluster_cluster_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *AgentInfo) GetPort() uint32 {
+func (x *AgentInfo) GetPort() int64 {
 	if x != nil {
 		return x.Port
 	}
@@ -67,11 +66,10 @@ func (x *AgentInfo) GetPort() uint32 {
 
 type JoinRequest struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	AgentInfo     *AgentInfo `protobuf:"bytes,2,opt,name=agentInfo,proto3" json:"agentInfo,omitempty"`
+	Hostname      string     `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Hostname  string     `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty"`
-	AgentInfo *AgentInfo `protobuf:"bytes,2,opt,name=agentInfo,proto3" json:"agentInfo,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *JoinRequest) Reset() {
@@ -120,10 +118,9 @@ func (x *JoinRequest) GetAgentInfo() *AgentInfo {
 
 type JoinReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	Uuid          string `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Uuid string `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *JoinReply) Reset() {
@@ -169,7 +166,7 @@ var file_cluster_cluster_proto_rawDesc = []byte{
 	0x0a, 0x15, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x2f, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65,
 	0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x07, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72,
 	0x22, 0x1f, 0x0a, 0x09, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x12, 0x0a,
-	0x04, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x04, 0x70, 0x6f, 0x72,
+	0x04, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04, 0x70, 0x6f, 0x72,
 	0x74, 0x22, 0x5b, 0x0a, 0x0b, 0x4a, 0x6f, 0x69, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
 	0x12, 0x1a, 0x0a, 0x08, 0x68, 0x6f, 0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x09, 0x52, 0x08, 0x68, 0x6f, 0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x30, 0x0a, 0x09,

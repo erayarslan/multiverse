@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -27,7 +28,7 @@ func (c *client) List(ctx context.Context) ([]string, error) {
 }
 
 func NewClient(addr string) (Client, error) {
-	var opts = []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	conn, err := grpc.NewClient(addr, opts...)
 	if err != nil {
 		return nil, err

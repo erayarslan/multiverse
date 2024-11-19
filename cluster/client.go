@@ -3,19 +3,20 @@ package cluster
 import (
 	"context"
 	"fmt"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
-	"google.golang.org/grpc/credentials/insecure"
 	"log"
 	"multipass-cluster/agent"
 	"os"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type client struct {
-	conn      *grpc.ClientConn
-	client    RpcClient
-	agentInfo *agent.Info
+	conn   *grpc.ClientConn
+	client RpcClient
+	port   int64
 }
 
 type Client interface {
@@ -70,7 +71,7 @@ func (c *client) join() error {
 	err = stream.Send(&JoinRequest{
 		Hostname: hostname,
 		AgentInfo: &AgentInfo{
-			Port: uint32(c.agentInfo.Port),
+			Port: c.port,
 		},
 	})
 	if err != nil {
@@ -100,16 +101,16 @@ func (c *client) join() error {
 	return <-errCh
 }
 
-func NewClient(addr string, agentInfoCh chan *agent.Info) (Client, error) {
-	var opts = []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+func NewClient(addr string, agentServer agent.Server) (Client, error) {
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	conn, err := grpc.NewClient(addr, opts...)
 	if err != nil {
 		return nil, err
 	}
 	rpcClient := NewRpcClient(conn)
 	return &client{
-		conn:      conn,
-		client:    rpcClient,
-		agentInfo: <-agentInfoCh,
+		conn:   conn,
+		client: rpcClient,
+		port:   int64(agentServer.Port()),
 	}, nil
 }

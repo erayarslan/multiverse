@@ -22,8 +22,8 @@ const (
 
 type ListRequest struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListRequest) Reset() {
@@ -58,10 +58,9 @@ func (*ListRequest) Descriptor() ([]byte, []int) {
 
 type ListReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	Names []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
+	Names         []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListReply) Reset() {
@@ -103,13 +102,12 @@ func (x *ListReply) GetNames() []string {
 
 type ShellRequest struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	InstanceName  string `protobuf:"bytes,1,opt,name=instance_name,json=instanceName,proto3" json:"instance_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	InstanceName string `protobuf:"bytes,1,opt,name=instance_name,json=instanceName,proto3" json:"instance_name,omitempty"`
-	Height       uint32 `protobuf:"varint,2,opt,name=height,proto3" json:"height,omitempty"`
-	Width        uint32 `protobuf:"varint,3,opt,name=width,proto3" json:"width,omitempty"`
-	InBuffer     []byte `protobuf:"bytes,4,opt,name=in_buffer,json=inBuffer,proto3" json:"in_buffer,omitempty"`
+	InBuffer      []byte `protobuf:"bytes,4,opt,name=in_buffer,json=inBuffer,proto3" json:"in_buffer,omitempty"`
+	Height        int64  `protobuf:"varint,2,opt,name=height,proto3" json:"height,omitempty"`
+	Width         int64  `protobuf:"varint,3,opt,name=width,proto3" json:"width,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ShellRequest) Reset() {
@@ -149,14 +147,14 @@ func (x *ShellRequest) GetInstanceName() string {
 	return ""
 }
 
-func (x *ShellRequest) GetHeight() uint32 {
+func (x *ShellRequest) GetHeight() int64 {
 	if x != nil {
 		return x.Height
 	}
 	return 0
 }
 
-func (x *ShellRequest) GetWidth() uint32 {
+func (x *ShellRequest) GetWidth() int64 {
 	if x != nil {
 		return x.Width
 	}
@@ -172,11 +170,10 @@ func (x *ShellRequest) GetInBuffer() []byte {
 
 type ShellReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	OutBuffer []byte `protobuf:"bytes,1,opt,name=out_buffer,json=outBuffer,proto3" json:"out_buffer,omitempty"`
-	ErrBuffer []byte `protobuf:"bytes,2,opt,name=err_buffer,json=errBuffer,proto3" json:"err_buffer,omitempty"`
+	OutBuffer     []byte `protobuf:"bytes,1,opt,name=out_buffer,json=outBuffer,proto3" json:"out_buffer,omitempty"`
+	ErrBuffer     []byte `protobuf:"bytes,2,opt,name=err_buffer,json=errBuffer,proto3" json:"err_buffer,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ShellReply) Reset() {
@@ -235,8 +232,8 @@ var file_agent_agent_proto_rawDesc = []byte{
 	0x69, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x09, 0x52, 0x0c, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x4e, 0x61, 0x6d,
 	0x65, 0x12, 0x16, 0x0a, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0d, 0x52, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x77, 0x69, 0x64,
-	0x74, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x05, 0x77, 0x69, 0x64, 0x74, 0x68, 0x12,
+	0x03, 0x52, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x77, 0x69, 0x64,
+	0x74, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x05, 0x77, 0x69, 0x64, 0x74, 0x68, 0x12,
 	0x1b, 0x0a, 0x09, 0x69, 0x6e, 0x5f, 0x62, 0x75, 0x66, 0x66, 0x65, 0x72, 0x18, 0x04, 0x20, 0x01,
 	0x28, 0x0c, 0x52, 0x08, 0x69, 0x6e, 0x42, 0x75, 0x66, 0x66, 0x65, 0x72, 0x22, 0x4a, 0x0a, 0x0a,
 	0x53, 0x68, 0x65, 0x6c, 0x6c, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x1d, 0x0a, 0x0a, 0x6f, 0x75,

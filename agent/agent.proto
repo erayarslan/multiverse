@@ -17,8 +17,8 @@ message ListReply {
 
 message ShellRequest {
   string instance_name = 1;
-  uint32 height = 2;
-  uint32 width = 3;
+  int64 height = 2;
+  int64 width = 3;
   bytes in_buffer = 4;
 }
 

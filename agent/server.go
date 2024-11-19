@@ -5,13 +5,14 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"golang.org/x/crypto/ssh"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"io"
 	"multipass-cluster/multipass"
 	"net"
 	"os"
+
+	"golang.org/x/crypto/ssh"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 type Info struct {
@@ -19,11 +20,15 @@ type Info struct {
 }
 
 type Server interface {
+	Serve() error
+	Port() int
 }
 
 type server struct {
 	UnimplementedRpcServer
 	multipassClient multipass.RpcClient
+	listener        net.Listener
+	grpcServer      *grpc.Server
 }
 
 func streamHandler[Req any, Res any](stream grpc.BidiStreamingClient[Req, Res], req *Req) (res *Res, err error) {
@@ -32,20 +37,24 @@ func streamHandler[Req any, Res any](stream grpc.BidiStreamingClient[Req, Res], 
 		return nil, err
 	}
 
-	for {
-		in, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		return in, nil
+	in, err := stream.Recv()
+	if err == io.EOF {
+		err = stream.CloseSend()
+		return nil, err
+	}
+	if err != nil {
+		return nil, err
 	}
 
-	err = stream.CloseSend()
-	return nil, err
+	return in, nil
+}
+
+func (s *server) Serve() error {
+	return s.grpcServer.Serve(s.listener)
+}
+
+func (s *server) Port() int {
+	return s.listener.Addr().(*net.TCPAddr).Port
 }
 
 func (s *server) List(ctx context.Context, _ *ListRequest) (*ListReply, error) {
@@ -59,7 +68,7 @@ func (s *server) List(ctx context.Context, _ *ListRequest) (*ListReply, error) {
 		return nil, err
 	}
 
-	var response = &ListReply{
+	response := &ListReply{
 		Names: make([]string, 0),
 	}
 
@@ -68,13 +77,11 @@ func (s *server) List(ctx context.Context, _ *ListRequest) (*ListReply, error) {
 		return response, nil
 	}
 
-	switch listContents.(type) {
-	case *multipass.ListReply_InstanceList:
-		instances := listContents.(*multipass.ListReply_InstanceList).InstanceList.GetInstances()
+	if listReplyInstanceList, ok := listContents.(*multipass.ListReply_InstanceList); !ok {
+		instances := listReplyInstanceList.InstanceList.GetInstances()
 		for _, instance := range instances {
 			response.Names = append(response.Names, instance.Name)
 		}
-	case *multipass.ListReply_SnapshotList:
 	}
 
 	return response, nil
@@ -118,9 +125,9 @@ func (s *shellReqWriter) Write(p []byte) (n int, err error) {
 }
 
 func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]) error {
-	var outW = &shellReqWriter{stream: stream}
-	var errW = &shellReqWriter{stream: stream}
-	var inR = &shellReqReader{stream: stream}
+	outW := &shellReqWriter{stream: stream}
+	errW := &shellReqWriter{stream: stream}
+	inR := &shellReqReader{stream: stream}
 
 	for {
 		in, err := stream.Recv()
@@ -132,18 +139,22 @@ func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
 		if err != nil {
 			return err
 		}
-
-		return nil
 	}
 }
 
+//nolint:funlen
 func (s *server) ssh(ctx context.Context, instanceName string, height int, width int, outW io.Writer, errW io.Writer, inR io.Reader) error {
 	stream, err := s.multipassClient.SshInfo(ctx)
 	if err != nil {
 		return err
 	}
 
-	res, err := streamHandler[multipass.SSHInfoRequest, multipass.SSHInfoReply](stream, &multipass.SSHInfoRequest{InstanceName: []string{instanceName}})
+	res, err := streamHandler[multipass.SSHInfoRequest, multipass.SSHInfoReply](
+		stream,
+		&multipass.SSHInfoRequest{
+			InstanceName: []string{instanceName},
+		},
+	)
 	if err != nil {
 		return err
 	}
@@ -163,7 +174,7 @@ func (s *server) ssh(ctx context.Context, instanceName string, height int, width
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(signer),
 		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(), // nolint:gosec
 	}
 
 	sshClient, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", info.Host, info.Port), config)
@@ -216,57 +227,45 @@ func (s *server) ssh(ctx context.Context, instanceName string, height int, width
 
 	if err := sshSession.Wait(); err != nil {
 		var e *ssh.ExitError
-		if errors.As(err, &e) {
-			switch e.ExitStatus() {
-			case 130:
-				return nil
-			}
+		if errors.As(err, &e) && e.ExitStatus() == 130 {
+			return nil
 		}
+
 		return err
 	}
 
 	return nil
 }
 
-func NewServer(target string, addr string, multipassCertFilePath string, multipassKeyFilePath string, infoCh chan *Info) error {
-	certPEMBlock, err := os.ReadFile(multipassCertFilePath)
+func NewServer(target string, addr string, multipassCertFilePath string, multipassKeyFilePath string) (Server, error) {
+	multipassCertificate, err := tls.LoadX509KeyPair(multipassCertFilePath, multipassKeyFilePath)
 	if err != nil {
-		return err
-	}
-	keyPEMBlock, err := os.ReadFile(multipassKeyFilePath)
-	if err != nil {
-		return err
-	}
-
-	multipassCertificate, err := tls.X509KeyPair(certPEMBlock, keyPEMBlock)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
 	multipassTransportCredentials := credentials.NewTLS(&tls.Config{
 		Certificates:       []tls.Certificate{multipassCertificate},
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: true, // nolint:gosec
 	})
 
-	var dialOpts = []grpc.DialOption{grpc.WithTransportCredentials(multipassTransportCredentials)}
+	dialOpts := []grpc.DialOption{grpc.WithTransportCredentials(multipassTransportCredentials)}
 	conn, err := grpc.NewClient(target, dialOpts...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("%s:0", addr))
 	if err != nil {
-		return err
-	}
-
-	infoCh <- &Info{
-		Port: lis.Addr().(*net.TCPAddr).Port,
+		return nil, err
 	}
 
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
-	RegisterRpcServer(grpcServer, &server{
+	server := &server{
 		multipassClient: multipass.NewRpcClient(conn),
-	})
-	return grpcServer.Serve(lis)
+		listener:        lis,
+		grpcServer:      grpcServer,
+	}
+	RegisterRpcServer(grpcServer, server)
+	return server, nil
 }

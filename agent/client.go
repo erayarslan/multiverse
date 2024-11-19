@@ -2,12 +2,13 @@ package agent
 
 import (
 	"context"
-	"golang.org/x/crypto/ssh/terminal"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"io"
 	"log"
 	"os"
+
+	"golang.org/x/term"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type client struct {
@@ -34,18 +35,18 @@ func (c *client) List(ctx context.Context) ([]string, error) {
 func (c *client) Shell(ctx context.Context, instanceName string) error {
 	fdOut := int(os.Stdout.Fd())
 	_ = int(os.Stdin.Fd())
-	state, err := terminal.MakeRaw(fdOut)
+	state, err := term.MakeRaw(fdOut)
 	if err != nil {
 		return err
 	}
-	defer func(fd int, oldState *terminal.State) {
-		err := terminal.Restore(fd, oldState)
+	defer func(fd int, oldState *term.State) {
+		err := term.Restore(fd, oldState)
 		if err != nil {
 			panic(err)
 		}
 	}(fdOut, state)
 
-	w, h, err := terminal.GetSize(fdOut)
+	w, h, err := term.GetSize(fdOut)
 	if err != nil {
 		return err
 	}
@@ -57,11 +58,10 @@ func (c *client) Shell(ctx context.Context, instanceName string) error {
 
 	err = stream.Send(&ShellRequest{
 		InstanceName: instanceName,
-		Height:       uint32(h),
-		Width:        uint32(w),
+		Height:       int64(h),
+		Width:        int64(w),
 		InBuffer:     make([]byte, 0),
 	})
-
 	if err != nil {
 		return err
 	}
@@ -78,13 +78,11 @@ func (c *client) Shell(ctx context.Context, instanceName string) error {
 		log.Printf("received on worker: %s", in)
 	}
 
-	err = stream.CloseSend()
-
-	return nil
+	return stream.CloseSend()
 }
 
 func NewClient(addr string) (Client, error) {
-	var opts = []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	conn, err := grpc.NewClient(addr, opts...)
 	if err != nil {
 		return nil, err

@@ -2,22 +2,30 @@ package api
 
 import (
 	"context"
-	"google.golang.org/grpc"
 	"multipass-cluster/cluster"
 	"net"
+
+	"google.golang.org/grpc"
 )
 
 type server struct {
 	UnimplementedRpcServer
 	clusterServer cluster.Server
+	listener      net.Listener
+	grpcServer    *grpc.Server
 }
 
 type Server interface {
+	Serve() error
+}
+
+func (s *server) Serve() error {
+	return s.grpcServer.Serve(s.listener)
 }
 
 func (s *server) List(ctx context.Context, _ *ListRequest) (*ListReply, error) {
 	var allNames []string
-	for _, client := range s.clusterServer.GetMultipassClients() {
+	for _, client := range *s.clusterServer.GetClients() {
 		names, err := client.List(ctx)
 		if err != nil {
 			return nil, err
@@ -31,19 +39,18 @@ func (s *server) List(ctx context.Context, _ *ListRequest) (*ListReply, error) {
 	}, nil
 }
 
-func NewServer(addr string, clusterServerCh chan cluster.Server) error {
+func NewServer(addr string, clusterServer cluster.Server) (Server, error) {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
-	RegisterRpcServer(grpcServer, &server{
-		clusterServer: <-clusterServerCh,
-	})
-	err = grpcServer.Serve(lis)
-	if err != nil {
-		return err
+	server := &server{
+		clusterServer: clusterServer,
+		listener:      lis,
+		grpcServer:    grpcServer,
 	}
-	return nil
+	RegisterRpcServer(grpcServer, server)
+	return server, nil
 }

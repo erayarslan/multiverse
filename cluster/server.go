@@ -2,68 +2,60 @@ package cluster
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/peer"
 	"log"
 	"multipass-cluster/agent"
 	"net"
 	"strings"
 	"sync"
+
+	"github.com/google/uuid"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/peer"
 )
 
 type server struct {
 	UnimplementedRpcServer
-	clients          map[string]grpc.BidiStreamingServer[JoinRequest, JoinReply]
-	multipassClients map[string]agent.Client
-
-	clientsMu          sync.RWMutex
-	multipassClientsMu sync.RWMutex
+	listener   net.Listener
+	clients    *map[string]agent.Client
+	grpcServer *grpc.Server
+	clientsMu  sync.RWMutex
 }
 
 type Server interface {
-	GetMultipassClients() map[string]agent.Client
+	GetClients() *map[string]agent.Client
+	Serve() error
 }
 
-func (s *server) GetMultipassClients() map[string]agent.Client {
+func (s *server) GetClients() *map[string]agent.Client {
 	s.clientsMu.Lock()
 	defer s.clientsMu.Unlock()
-	return s.multipassClients
+	return s.clients
 }
 
-func (s *server) addClient(uid string, stream grpc.BidiStreamingServer[JoinRequest, JoinReply]) {
+func (s *server) addClient(uid string, client agent.Client) {
 	s.clientsMu.Lock()
 	defer s.clientsMu.Unlock()
-	s.clients[uid] = stream
+	(*s.clients)[uid] = client
 }
 
 func (s *server) removeClient(uid string) {
 	s.clientsMu.Lock()
 	defer s.clientsMu.Unlock()
-	delete(s.clients, uid)
-}
-
-func (s *server) addMultipassClient(uid string, client agent.Client) {
-	s.multipassClientsMu.Lock()
-	defer s.multipassClientsMu.Unlock()
-	s.multipassClients[uid] = client
-}
-
-func (s *server) removeMultipassClient(uid string) {
-	s.multipassClientsMu.Lock()
-	defer s.multipassClientsMu.Unlock()
-	err := s.multipassClients[uid].Close()
+	err := (*s.clients)[uid].Close()
 	if err != nil {
-		log.Fatalf("failed to close multipass client: %v", err)
+		log.Printf("failed to close agent client: %v", err)
 	}
-	delete(s.multipassClients, uid)
+	delete(*s.clients, uid)
+}
+
+func (s *server) Serve() error {
+	return s.grpcServer.Serve(s.listener)
 }
 
 func (s *server) Join(stream grpc.BidiStreamingServer[JoinRequest, JoinReply]) error {
 	id := uuid.Must(uuid.NewRandom()).String()
 	defer log.Printf("client disconnected: %s", id)
 	defer s.removeClient(id)
-	defer s.removeMultipassClient(id)
 
 	p, ok := peer.FromContext(stream.Context())
 	if !ok {
@@ -88,26 +80,25 @@ func (s *server) Join(stream grpc.BidiStreamingServer[JoinRequest, JoinReply]) e
 			return fmt.Errorf("failed to create multipass client: %w", err)
 		}
 
-		s.addClient(id, stream)
-		s.addMultipassClient(id, agentClient)
+		s.addClient(id, agentClient)
 
 		log.Printf("joined hostname: %s", request.Hostname)
 	}
 }
 
-func NewServer(addr string, clusterServerCh chan Server) error {
+func NewServer(addr string) (Server, error) {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 	server := &server{
-		clients:          make(map[string]grpc.BidiStreamingServer[JoinRequest, JoinReply]),
-		clientsMu:        sync.RWMutex{},
-		multipassClients: make(map[string]agent.Client),
+		clientsMu:  sync.RWMutex{},
+		clients:    &map[string]agent.Client{},
+		listener:   lis,
+		grpcServer: grpcServer,
 	}
-	clusterServerCh <- server
 	RegisterRpcServer(grpcServer, server)
-	return grpcServer.Serve(lis)
+	return server, nil
 }

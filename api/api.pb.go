@@ -22,8 +22,8 @@ const (
 
 type ListRequest struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListRequest) Reset() {
@@ -58,10 +58,9 @@ func (*ListRequest) Descriptor() ([]byte, []int) {
 
 type ListReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	Names []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
+	Names         []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListReply) Reset() {

@@ -355,24 +355,23 @@ func (StartError_ErrorCode) EnumDescriptor() ([]byte, []int) {
 }
 
 type LaunchRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	InstanceName       string                          `protobuf:"bytes,1,opt,name=instance_name,json=instanceName,proto3" json:"instance_name,omitempty"`
-	Image              string                          `protobuf:"bytes,2,opt,name=image,proto3" json:"image,omitempty"`
-	KernelName         string                          `protobuf:"bytes,3,opt,name=kernel_name,json=kernelName,proto3" json:"kernel_name,omitempty"`
-	NumCores           int32                           `protobuf:"varint,4,opt,name=num_cores,json=numCores,proto3" json:"num_cores,omitempty"`
-	MemSize            string                          `protobuf:"bytes,5,opt,name=mem_size,json=memSize,proto3" json:"mem_size,omitempty"`       // units?
-	DiskSpace          string                          `protobuf:"bytes,6,opt,name=disk_space,json=diskSpace,proto3" json:"disk_space,omitempty"` // units?
-	TimeZone           string                          `protobuf:"bytes,7,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
-	CloudInitUserData  string                          `protobuf:"bytes,8,opt,name=cloud_init_user_data,json=cloudInitUserData,proto3" json:"cloud_init_user_data,omitempty"`
-	RemoteName         string                          `protobuf:"bytes,9,opt,name=remote_name,json=remoteName,proto3" json:"remote_name,omitempty"`
-	VerbosityLevel     int32                           `protobuf:"varint,11,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	state              protoimpl.MessageState
+	DiskSpace          string `protobuf:"bytes,6,opt,name=disk_space,json=diskSpace,proto3" json:"disk_space,omitempty"`
+	MemSize            string `protobuf:"bytes,5,opt,name=mem_size,json=memSize,proto3" json:"mem_size,omitempty"`
+	InstanceName       string `protobuf:"bytes,1,opt,name=instance_name,json=instanceName,proto3" json:"instance_name,omitempty"`
+	Image              string `protobuf:"bytes,2,opt,name=image,proto3" json:"image,omitempty"`
+	TimeZone           string `protobuf:"bytes,7,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	Password           string `protobuf:"bytes,15,opt,name=password,proto3" json:"password,omitempty"`
+	RemoteName         string `protobuf:"bytes,9,opt,name=remote_name,json=remoteName,proto3" json:"remote_name,omitempty"`
+	CloudInitUserData  string `protobuf:"bytes,8,opt,name=cloud_init_user_data,json=cloudInitUserData,proto3" json:"cloud_init_user_data,omitempty"`
+	KernelName         string `protobuf:"bytes,3,opt,name=kernel_name,json=kernelName,proto3" json:"kernel_name,omitempty"`
+	unknownFields      protoimpl.UnknownFields
 	NetworkOptions     []*LaunchRequest_NetworkOptions `protobuf:"bytes,12,rep,name=network_options,json=networkOptions,proto3" json:"network_options,omitempty"`
-	PermissionToBridge bool                            `protobuf:"varint,13,opt,name=permission_to_bridge,json=permissionToBridge,proto3" json:"permission_to_bridge,omitempty"`
-	Timeout            int32                           `protobuf:"varint,14,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	Password           string                          `protobuf:"bytes,15,opt,name=password,proto3" json:"password,omitempty"`
+	sizeCache          protoimpl.SizeCache
+	VerbosityLevel     int32 `protobuf:"varint,11,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	Timeout            int32 `protobuf:"varint,14,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	NumCores           int32 `protobuf:"varint,4,opt,name=num_cores,json=numCores,proto3" json:"num_cores,omitempty"`
+	PermissionToBridge bool  `protobuf:"varint,13,opt,name=permission_to_bridge,json=permissionToBridge,proto3" json:"permission_to_bridge,omitempty"`
 }
 
 func (x *LaunchRequest) Reset() {
@@ -505,10 +504,9 @@ func (x *LaunchRequest) GetPassword() string {
 
 type LaunchError struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	ErrorCodes []LaunchError_ErrorCodes `protobuf:"varint,1,rep,packed,name=error_codes,json=errorCodes,proto3,enum=multipass.LaunchError_ErrorCodes" json:"error_codes,omitempty"`
+	ErrorCodes    []LaunchError_ErrorCodes `protobuf:"varint,1,rep,packed,name=error_codes,json=errorCodes,proto3,enum=multipass.LaunchError_ErrorCodes" json:"error_codes,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LaunchError) Reset() {
@@ -549,12 +547,11 @@ func (x *LaunchError) GetErrorCodes() []LaunchError_ErrorCodes {
 }
 
 type LaunchProgress struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state           protoimpl.MessageState
+	PercentComplete string `protobuf:"bytes,2,opt,name=percent_complete,json=percentComplete,proto3" json:"percent_complete,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 	Type            LaunchProgress_ProgressTypes `protobuf:"varint,1,opt,name=type,proto3,enum=multipass.LaunchProgress_ProgressTypes" json:"type,omitempty"`
-	PercentComplete string                       `protobuf:"bytes,2,opt,name=percent_complete,json=percentComplete,proto3" json:"percent_complete,omitempty"`
 }
 
 func (x *LaunchProgress) Reset() {
@@ -603,13 +600,12 @@ func (x *LaunchProgress) GetPercentComplete() string {
 
 type UpdateInfo struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	Url           string `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
+	Title         string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Description   string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Version     string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	Url         string `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
-	Title       string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateInfo) Reset() {
@@ -671,23 +667,17 @@ func (x *UpdateInfo) GetDescription() string {
 }
 
 type LaunchReply struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// Types that are assignable to CreateOneof:
-	//
-	//	*LaunchReply_VmInstanceName
-	//	*LaunchReply_LaunchProgress
-	//	*LaunchReply_CreateMessage
 	CreateOneof           isLaunchReply_CreateOneof `protobuf_oneof:"create_oneof"`
-	LogLine               string                    `protobuf:"bytes,6,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
-	UpdateInfo            *UpdateInfo               `protobuf:"bytes,7,opt,name=update_info,json=updateInfo,proto3" json:"update_info,omitempty"`
-	ReplyMessage          string                    `protobuf:"bytes,8,opt,name=reply_message,json=replyMessage,proto3" json:"reply_message,omitempty"`
-	NetsNeedBridging      []string                  `protobuf:"bytes,9,rep,name=nets_need_bridging,json=netsNeedBridging,proto3" json:"nets_need_bridging,omitempty"`
-	AliasesToBeCreated    []*LaunchReply_Alias      `protobuf:"bytes,10,rep,name=aliases_to_be_created,json=aliasesToBeCreated,proto3" json:"aliases_to_be_created,omitempty"`
-	WorkspacesToBeCreated []string                  `protobuf:"bytes,11,rep,name=workspaces_to_be_created,json=workspacesToBeCreated,proto3" json:"workspaces_to_be_created,omitempty"`
-	PasswordRequested     bool                      `protobuf:"varint,12,opt,name=password_requested,json=passwordRequested,proto3" json:"password_requested,omitempty"`
+	state                 protoimpl.MessageState
+	UpdateInfo            *UpdateInfo `protobuf:"bytes,7,opt,name=update_info,json=updateInfo,proto3" json:"update_info,omitempty"`
+	LogLine               string      `protobuf:"bytes,6,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	ReplyMessage          string      `protobuf:"bytes,8,opt,name=reply_message,json=replyMessage,proto3" json:"reply_message,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	NetsNeedBridging      []string             `protobuf:"bytes,9,rep,name=nets_need_bridging,json=netsNeedBridging,proto3" json:"nets_need_bridging,omitempty"`
+	AliasesToBeCreated    []*LaunchReply_Alias `protobuf:"bytes,10,rep,name=aliases_to_be_created,json=aliasesToBeCreated,proto3" json:"aliases_to_be_created,omitempty"`
+	WorkspacesToBeCreated []string             `protobuf:"bytes,11,rep,name=workspaces_to_be_created,json=workspacesToBeCreated,proto3" json:"workspaces_to_be_created,omitempty"`
+	sizeCache             protoimpl.SizeCache
+	PasswordRequested     bool `protobuf:"varint,12,opt,name=password_requested,json=passwordRequested,proto3" json:"password_requested,omitempty"`
 }
 
 func (x *LaunchReply) Reset() {
@@ -820,10 +810,9 @@ func (*LaunchReply_LaunchProgress) isLaunchReply_CreateOneof() {}
 func (*LaunchReply_CreateMessage) isLaunchReply_CreateOneof() {}
 
 type PurgeRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 	VerbosityLevel int32 `protobuf:"varint,1,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
 }
 
@@ -865,12 +854,11 @@ func (x *PurgeRequest) GetVerbosityLevel() int32 {
 }
 
 type PurgeReply struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	LogLine         string   `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	state           protoimpl.MessageState
+	LogLine         string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	unknownFields   protoimpl.UnknownFields
 	PurgedInstances []string `protobuf:"bytes,2,rep,name=purged_instances,json=purgedInstances,proto3" json:"purged_instances,omitempty"`
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *PurgeReply) Reset() {
@@ -918,17 +906,16 @@ func (x *PurgeReply) GetPurgedInstances() []string {
 }
 
 type FindRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state                        protoimpl.MessageState
 	SearchString                 string `protobuf:"bytes,1,opt,name=search_string,json=searchString,proto3" json:"search_string,omitempty"`
 	RemoteName                   string `protobuf:"bytes,2,opt,name=remote_name,json=remoteName,proto3" json:"remote_name,omitempty"`
-	VerbosityLevel               int32  `protobuf:"varint,3,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
-	AllowUnsupported             bool   `protobuf:"varint,4,opt,name=allow_unsupported,json=allowUnsupported,proto3" json:"allow_unsupported,omitempty"`
-	ShowImages                   bool   `protobuf:"varint,5,opt,name=show_images,json=showImages,proto3" json:"show_images,omitempty"`
-	ShowBlueprints               bool   `protobuf:"varint,6,opt,name=show_blueprints,json=showBlueprints,proto3" json:"show_blueprints,omitempty"`
-	ForceManifestNetworkDownload bool   `protobuf:"varint,7,opt,name=force_manifest_network_download,json=forceManifestNetworkDownload,proto3" json:"force_manifest_network_download,omitempty"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
+	VerbosityLevel               int32 `protobuf:"varint,3,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	AllowUnsupported             bool  `protobuf:"varint,4,opt,name=allow_unsupported,json=allowUnsupported,proto3" json:"allow_unsupported,omitempty"`
+	ShowImages                   bool  `protobuf:"varint,5,opt,name=show_images,json=showImages,proto3" json:"show_images,omitempty"`
+	ShowBlueprints               bool  `protobuf:"varint,6,opt,name=show_blueprints,json=showBlueprints,proto3" json:"show_blueprints,omitempty"`
+	ForceManifestNetworkDownload bool  `protobuf:"varint,7,opt,name=force_manifest_network_download,json=forceManifestNetworkDownload,proto3" json:"force_manifest_network_download,omitempty"`
 }
 
 func (x *FindRequest) Reset() {
@@ -1011,15 +998,14 @@ func (x *FindRequest) GetForceManifestNetworkDownload() bool {
 }
 
 type FindReply struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	ShowImages     bool                   `protobuf:"varint,1,opt,name=show_images,json=showImages,proto3" json:"show_images,omitempty"`
-	ShowBlueprints bool                   `protobuf:"varint,2,opt,name=show_blueprints,json=showBlueprints,proto3" json:"show_blueprints,omitempty"`
+	state          protoimpl.MessageState
+	LogLine        string `protobuf:"bytes,5,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	unknownFields  protoimpl.UnknownFields
 	ImagesInfo     []*FindReply_ImageInfo `protobuf:"bytes,3,rep,name=images_info,json=imagesInfo,proto3" json:"images_info,omitempty"`
 	BlueprintsInfo []*FindReply_ImageInfo `protobuf:"bytes,4,rep,name=blueprints_info,json=blueprintsInfo,proto3" json:"blueprints_info,omitempty"`
-	LogLine        string                 `protobuf:"bytes,5,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	sizeCache      protoimpl.SizeCache
+	ShowImages     bool `protobuf:"varint,1,opt,name=show_images,json=showImages,proto3" json:"show_images,omitempty"`
+	ShowBlueprints bool `protobuf:"varint,2,opt,name=show_blueprints,json=showBlueprints,proto3" json:"show_blueprints,omitempty"`
 }
 
 func (x *FindReply) Reset() {
@@ -1089,11 +1075,10 @@ func (x *FindReply) GetLogLine() string {
 
 type InstanceSnapshotPair struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	SnapshotName  *string `protobuf:"bytes,2,opt,name=snapshot_name,json=snapshotName,proto3,oneof" json:"snapshot_name,omitempty"`
+	InstanceName  string  `protobuf:"bytes,1,opt,name=instance_name,json=instanceName,proto3" json:"instance_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	InstanceName string  `protobuf:"bytes,1,opt,name=instance_name,json=instanceName,proto3" json:"instance_name,omitempty"`
-	SnapshotName *string `protobuf:"bytes,2,opt,name=snapshot_name,json=snapshotName,proto3,oneof" json:"snapshot_name,omitempty"` // if this is present, the msg specifies a snapshot; otherwise, an instance
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *InstanceSnapshotPair) Reset() {
@@ -1141,14 +1126,13 @@ func (x *InstanceSnapshotPair) GetSnapshotName() string {
 }
 
 type InfoRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state                 protoimpl.MessageState
+	unknownFields         protoimpl.UnknownFields
 	InstanceSnapshotPairs []*InstanceSnapshotPair `protobuf:"bytes,1,rep,name=instance_snapshot_pairs,json=instanceSnapshotPairs,proto3" json:"instance_snapshot_pairs,omitempty"`
-	VerbosityLevel        int32                   `protobuf:"varint,3,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
-	NoRuntimeInformation  bool                    `protobuf:"varint,4,opt,name=no_runtime_information,json=noRuntimeInformation,proto3" json:"no_runtime_information,omitempty"`
-	Snapshots             bool                    `protobuf:"varint,5,opt,name=snapshots,proto3" json:"snapshots,omitempty"`
+	sizeCache             protoimpl.SizeCache
+	VerbosityLevel        int32 `protobuf:"varint,3,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	NoRuntimeInformation  bool  `protobuf:"varint,4,opt,name=no_runtime_information,json=noRuntimeInformation,proto3" json:"no_runtime_information,omitempty"`
+	Snapshots             bool  `protobuf:"varint,5,opt,name=snapshots,proto3" json:"snapshots,omitempty"`
 }
 
 func (x *InfoRequest) Reset() {
@@ -1211,11 +1195,10 @@ func (x *InfoRequest) GetSnapshots() bool {
 
 type IdMap struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	HostId     int32 `protobuf:"varint,1,opt,name=host_id,json=hostId,proto3" json:"host_id,omitempty"`
-	InstanceId int32 `protobuf:"varint,2,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	sizeCache     protoimpl.SizeCache
+	HostId        int32 `protobuf:"varint,1,opt,name=host_id,json=hostId,proto3" json:"host_id,omitempty"`
+	InstanceId    int32 `protobuf:"varint,2,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
 }
 
 func (x *IdMap) Reset() {
@@ -1264,11 +1247,10 @@ func (x *IdMap) GetInstanceId() int32 {
 
 type MountMaps struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	UidMappings []*IdMap `protobuf:"bytes,1,rep,name=uid_mappings,json=uidMappings,proto3" json:"uid_mappings,omitempty"`
-	GidMappings []*IdMap `protobuf:"bytes,2,rep,name=gid_mappings,json=gidMappings,proto3" json:"gid_mappings,omitempty"`
+	UidMappings   []*IdMap `protobuf:"bytes,1,rep,name=uid_mappings,json=uidMappings,proto3" json:"uid_mappings,omitempty"`
+	GidMappings   []*IdMap `protobuf:"bytes,2,rep,name=gid_mappings,json=gidMappings,proto3" json:"gid_mappings,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MountMaps) Reset() {
@@ -1316,12 +1298,11 @@ func (x *MountMaps) GetGidMappings() []*IdMap {
 }
 
 type MountInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	LongestPathLen uint32                  `protobuf:"varint,1,opt,name=longest_path_len,json=longestPathLen,proto3" json:"longest_path_len,omitempty"`
+	state          protoimpl.MessageState
+	unknownFields  protoimpl.UnknownFields
 	MountPaths     []*MountInfo_MountPaths `protobuf:"bytes,2,rep,name=mount_paths,json=mountPaths,proto3" json:"mount_paths,omitempty"`
+	sizeCache      protoimpl.SizeCache
+	LongestPathLen uint32 `protobuf:"varint,1,opt,name=longest_path_len,json=longestPathLen,proto3" json:"longest_path_len,omitempty"`
 }
 
 func (x *MountInfo) Reset() {
@@ -1370,10 +1351,9 @@ func (x *MountInfo) GetMountPaths() []*MountInfo_MountPaths {
 
 type InstanceStatus struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	Status InstanceStatus_Status `protobuf:"varint,1,opt,name=status,proto3,enum=multipass.InstanceStatus_Status" json:"status,omitempty"`
+	sizeCache     protoimpl.SizeCache
+	Status        InstanceStatus_Status `protobuf:"varint,1,opt,name=status,proto3,enum=multipass.InstanceStatus_Status" json:"status,omitempty"`
 }
 
 func (x *InstanceStatus) Reset() {
@@ -1414,22 +1394,21 @@ func (x *InstanceStatus) GetStatus() InstanceStatus_Status {
 }
 
 type InstanceDetails struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	ImageRelease      string                 `protobuf:"bytes,1,opt,name=image_release,json=imageRelease,proto3" json:"image_release,omitempty"`
+	state             protoimpl.MessageState
+	CreationTimestamp *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=creation_timestamp,json=creationTimestamp,proto3" json:"creation_timestamp,omitempty"`
+	NumSnapshots      *int32                 `protobuf:"varint,9,opt,name=num_snapshots,json=numSnapshots,proto3,oneof" json:"num_snapshots,omitempty"`
+	Load              string                 `protobuf:"bytes,4,opt,name=load,proto3" json:"load,omitempty"`
 	CurrentRelease    string                 `protobuf:"bytes,2,opt,name=current_release,json=currentRelease,proto3" json:"current_release,omitempty"`
 	Id                string                 `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
-	Load              string                 `protobuf:"bytes,4,opt,name=load,proto3" json:"load,omitempty"`
+	ImageRelease      string                 `protobuf:"bytes,1,opt,name=image_release,json=imageRelease,proto3" json:"image_release,omitempty"`
 	MemoryUsage       string                 `protobuf:"bytes,5,opt,name=memory_usage,json=memoryUsage,proto3" json:"memory_usage,omitempty"`
 	DiskUsage         string                 `protobuf:"bytes,6,opt,name=disk_usage,json=diskUsage,proto3" json:"disk_usage,omitempty"`
-	Ipv4              []string               `protobuf:"bytes,7,rep,name=ipv4,proto3" json:"ipv4,omitempty"`
-	Ipv6              []string               `protobuf:"bytes,8,rep,name=ipv6,proto3" json:"ipv6,omitempty"`
-	NumSnapshots      *int32                 `protobuf:"varint,9,opt,name=num_snapshots,json=numSnapshots,proto3,oneof" json:"num_snapshots,omitempty"`
 	CpuTimes          string                 `protobuf:"bytes,10,opt,name=cpu_times,json=cpuTimes,proto3" json:"cpu_times,omitempty"`
 	Uptime            string                 `protobuf:"bytes,11,opt,name=uptime,proto3" json:"uptime,omitempty"`
-	CreationTimestamp *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=creation_timestamp,json=creationTimestamp,proto3" json:"creation_timestamp,omitempty"`
+	Ipv4              []string               `protobuf:"bytes,7,rep,name=ipv4,proto3" json:"ipv4,omitempty"`
+	Ipv6              []string               `protobuf:"bytes,8,rep,name=ipv6,proto3" json:"ipv6,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *InstanceDetails) Reset() {
@@ -1547,14 +1526,13 @@ func (x *InstanceDetails) GetCreationTimestamp() *timestamppb.Timestamp {
 }
 
 type SnapshotFundamentals struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state             protoimpl.MessageState
+	CreationTimestamp *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=creation_timestamp,json=creationTimestamp,proto3" json:"creation_timestamp,omitempty"`
 	SnapshotName      string                 `protobuf:"bytes,1,opt,name=snapshot_name,json=snapshotName,proto3" json:"snapshot_name,omitempty"`
 	Parent            string                 `protobuf:"bytes,2,opt,name=parent,proto3" json:"parent,omitempty"`
 	Comment           string                 `protobuf:"bytes,3,opt,name=comment,proto3" json:"comment,omitempty"`
-	CreationTimestamp *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=creation_timestamp,json=creationTimestamp,proto3" json:"creation_timestamp,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *SnapshotFundamentals) Reset() {
@@ -1617,12 +1595,11 @@ func (x *SnapshotFundamentals) GetCreationTimestamp() *timestamppb.Timestamp {
 
 type SnapshotDetails struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	Fundamentals  *SnapshotFundamentals `protobuf:"bytes,1,opt,name=fundamentals,proto3" json:"fundamentals,omitempty"`
+	Size          string                `protobuf:"bytes,2,opt,name=size,proto3" json:"size,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Fundamentals *SnapshotFundamentals `protobuf:"bytes,1,opt,name=fundamentals,proto3" json:"fundamentals,omitempty"`
-	Size         string                `protobuf:"bytes,2,opt,name=size,proto3" json:"size,omitempty"`
-	Children     []string              `protobuf:"bytes,4,rep,name=children,proto3" json:"children,omitempty"`
+	Children      []string `protobuf:"bytes,4,rep,name=children,proto3" json:"children,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SnapshotDetails) Reset() {
@@ -1677,21 +1654,16 @@ func (x *SnapshotDetails) GetChildren() []string {
 }
 
 type DetailedInfoItem struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Name           string          `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ExtraInfo      isDetailedInfoItem_ExtraInfo `protobuf_oneof:"extra_info"`
+	state          protoimpl.MessageState
 	InstanceStatus *InstanceStatus `protobuf:"bytes,2,opt,name=instance_status,json=instanceStatus,proto3" json:"instance_status,omitempty"`
+	MountInfo      *MountInfo      `protobuf:"bytes,6,opt,name=mount_info,json=mountInfo,proto3" json:"mount_info,omitempty"`
+	Name           string          `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	MemoryTotal    string          `protobuf:"bytes,3,opt,name=memory_total,json=memoryTotal,proto3" json:"memory_total,omitempty"`
 	DiskTotal      string          `protobuf:"bytes,4,opt,name=disk_total,json=diskTotal,proto3" json:"disk_total,omitempty"`
 	CpuCount       string          `protobuf:"bytes,5,opt,name=cpu_count,json=cpuCount,proto3" json:"cpu_count,omitempty"`
-	MountInfo      *MountInfo      `protobuf:"bytes,6,opt,name=mount_info,json=mountInfo,proto3" json:"mount_info,omitempty"`
-	// Types that are assignable to ExtraInfo:
-	//
-	//	*DetailedInfoItem_InstanceInfo
-	//	*DetailedInfoItem_SnapshotInfo
-	ExtraInfo isDetailedInfoItem_ExtraInfo `protobuf_oneof:"extra_info"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *DetailedInfoItem) Reset() {
@@ -1805,13 +1777,12 @@ func (*DetailedInfoItem_SnapshotInfo) isDetailedInfoItem_ExtraInfo() {}
 
 type InfoReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	UpdateInfo    *UpdateInfo `protobuf:"bytes,4,opt,name=update_info,json=updateInfo,proto3" json:"update_info,omitempty"`
+	LogLine       string      `protobuf:"bytes,3,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Details    []*DetailedInfoItem `protobuf:"bytes,1,rep,name=details,proto3" json:"details,omitempty"`
-	Snapshots  bool                `protobuf:"varint,2,opt,name=snapshots,proto3" json:"snapshots,omitempty"` // useful to determine what entity (instance/snapshot) was absent when details are empty
-	LogLine    string              `protobuf:"bytes,3,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
-	UpdateInfo *UpdateInfo         `protobuf:"bytes,4,opt,name=update_info,json=updateInfo,proto3" json:"update_info,omitempty"`
+	Details       []*DetailedInfoItem `protobuf:"bytes,1,rep,name=details,proto3" json:"details,omitempty"`
+	sizeCache     protoimpl.SizeCache
+	Snapshots     bool `protobuf:"varint,2,opt,name=snapshots,proto3" json:"snapshots,omitempty"`
 }
 
 func (x *InfoReply) Reset() {
@@ -1873,10 +1844,9 @@ func (x *InfoReply) GetUpdateInfo() *UpdateInfo {
 }
 
 type ListRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 	VerbosityLevel int32 `protobuf:"varint,1,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
 	Snapshots      bool  `protobuf:"varint,2,opt,name=snapshots,proto3" json:"snapshots,omitempty"`
 	RequestIpv4    bool  `protobuf:"varint,3,opt,name=request_ipv4,json=requestIpv4,proto3" json:"request_ipv4,omitempty"`
@@ -1934,15 +1904,14 @@ func (x *ListRequest) GetRequestIpv4() bool {
 }
 
 type ListVMInstance struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Name           string          `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	state          protoimpl.MessageState
 	InstanceStatus *InstanceStatus `protobuf:"bytes,2,opt,name=instance_status,json=instanceStatus,proto3" json:"instance_status,omitempty"`
-	Ipv4           []string        `protobuf:"bytes,3,rep,name=ipv4,proto3" json:"ipv4,omitempty"`
-	Ipv6           []string        `protobuf:"bytes,4,rep,name=ipv6,proto3" json:"ipv6,omitempty"`
+	Name           string          `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	CurrentRelease string          `protobuf:"bytes,5,opt,name=current_release,json=currentRelease,proto3" json:"current_release,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	Ipv4           []string `protobuf:"bytes,3,rep,name=ipv4,proto3" json:"ipv4,omitempty"`
+	Ipv6           []string `protobuf:"bytes,4,rep,name=ipv6,proto3" json:"ipv6,omitempty"`
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ListVMInstance) Reset() {
@@ -2012,11 +1981,10 @@ func (x *ListVMInstance) GetCurrentRelease() string {
 
 type ListVMSnapshot struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	Fundamentals  *SnapshotFundamentals `protobuf:"bytes,2,opt,name=fundamentals,proto3" json:"fundamentals,omitempty"`
+	Name          string                `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Name         string                `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Fundamentals *SnapshotFundamentals `protobuf:"bytes,2,opt,name=fundamentals,proto3" json:"fundamentals,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListVMSnapshot) Reset() {
@@ -2065,10 +2033,9 @@ func (x *ListVMSnapshot) GetFundamentals() *SnapshotFundamentals {
 
 type InstancesList struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	Instances []*ListVMInstance `protobuf:"bytes,1,rep,name=instances,proto3" json:"instances,omitempty"`
+	Instances     []*ListVMInstance `protobuf:"bytes,1,rep,name=instances,proto3" json:"instances,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *InstancesList) Reset() {
@@ -2110,10 +2077,9 @@ func (x *InstancesList) GetInstances() []*ListVMInstance {
 
 type SnapshotsList struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	Snapshots []*ListVMSnapshot `protobuf:"bytes,1,rep,name=snapshots,proto3" json:"snapshots,omitempty"`
+	Snapshots     []*ListVMSnapshot `protobuf:"bytes,1,rep,name=snapshots,proto3" json:"snapshots,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SnapshotsList) Reset() {
@@ -2154,17 +2120,12 @@ func (x *SnapshotsList) GetSnapshots() []*ListVMSnapshot {
 }
 
 type ListReply struct {
+	ListContents  isListReply_ListContents `protobuf_oneof:"list_contents"`
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	UpdateInfo    *UpdateInfo `protobuf:"bytes,4,opt,name=update_info,json=updateInfo,proto3" json:"update_info,omitempty"`
+	LogLine       string      `protobuf:"bytes,3,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	// Types that are assignable to ListContents:
-	//
-	//	*ListReply_InstanceList
-	//	*ListReply_SnapshotList
-	ListContents isListReply_ListContents `protobuf_oneof:"list_contents"`
-	LogLine      string                   `protobuf:"bytes,3,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
-	UpdateInfo   *UpdateInfo              `protobuf:"bytes,4,opt,name=update_info,json=updateInfo,proto3" json:"update_info,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListReply) Reset() {
@@ -2249,10 +2210,9 @@ func (*ListReply_InstanceList) isListReply_ListContents() {}
 func (*ListReply_SnapshotList) isListReply_ListContents() {}
 
 type NetworksRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 	VerbosityLevel int32 `protobuf:"varint,1,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
 }
 
@@ -2295,12 +2255,11 @@ func (x *NetworksRequest) GetVerbosityLevel() int32 {
 
 type NetInterface struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Type          string `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	Description   string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Name        string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Type        string `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
-	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetInterface) Reset() {
@@ -2356,12 +2315,11 @@ func (x *NetInterface) GetDescription() string {
 
 type NetworksReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	UpdateInfo    *UpdateInfo `protobuf:"bytes,3,opt,name=update_info,json=updateInfo,proto3" json:"update_info,omitempty"`
+	LogLine       string      `protobuf:"bytes,2,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Interfaces []*NetInterface `protobuf:"bytes,1,rep,name=interfaces,proto3" json:"interfaces,omitempty"`
-	LogLine    string          `protobuf:"bytes,2,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
-	UpdateInfo *UpdateInfo     `protobuf:"bytes,3,opt,name=update_info,json=updateInfo,proto3" json:"update_info,omitempty"`
+	Interfaces    []*NetInterface `protobuf:"bytes,1,rep,name=interfaces,proto3" json:"interfaces,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworksReply) Reset() {
@@ -2417,11 +2375,10 @@ func (x *NetworksReply) GetUpdateInfo() *UpdateInfo {
 
 type TargetPathInfo struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	InstanceName  string `protobuf:"bytes,1,opt,name=instance_name,json=instanceName,proto3" json:"instance_name,omitempty"`
+	TargetPath    string `protobuf:"bytes,2,opt,name=target_path,json=targetPath,proto3" json:"target_path,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	InstanceName string `protobuf:"bytes,1,opt,name=instance_name,json=instanceName,proto3" json:"instance_name,omitempty"`
-	TargetPath   string `protobuf:"bytes,2,opt,name=target_path,json=targetPath,proto3" json:"target_path,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TargetPathInfo) Reset() {
@@ -2469,16 +2426,15 @@ func (x *TargetPathInfo) GetTargetPath() string {
 }
 
 type MountRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	SourcePath     string                 `protobuf:"bytes,1,opt,name=source_path,json=sourcePath,proto3" json:"source_path,omitempty"`
-	TargetPaths    []*TargetPathInfo      `protobuf:"bytes,2,rep,name=target_paths,json=targetPaths,proto3" json:"target_paths,omitempty"`
-	MountMaps      *MountMaps             `protobuf:"bytes,3,opt,name=mount_maps,json=mountMaps,proto3" json:"mount_maps,omitempty"`
+	state          protoimpl.MessageState
+	MountMaps      *MountMaps `protobuf:"bytes,3,opt,name=mount_maps,json=mountMaps,proto3" json:"mount_maps,omitempty"`
+	SourcePath     string     `protobuf:"bytes,1,opt,name=source_path,json=sourcePath,proto3" json:"source_path,omitempty"`
+	Password       string     `protobuf:"bytes,6,opt,name=password,proto3" json:"password,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	TargetPaths    []*TargetPathInfo `protobuf:"bytes,2,rep,name=target_paths,json=targetPaths,proto3" json:"target_paths,omitempty"`
+	sizeCache      protoimpl.SizeCache
 	VerbosityLevel int32                  `protobuf:"varint,4,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
 	MountType      MountRequest_MountType `protobuf:"varint,5,opt,name=mount_type,json=mountType,proto3,enum=multipass.MountRequest_MountType" json:"mount_type,omitempty"`
-	Password       string                 `protobuf:"bytes,6,opt,name=password,proto3" json:"password,omitempty"`
 }
 
 func (x *MountRequest) Reset() {
@@ -2554,13 +2510,12 @@ func (x *MountRequest) GetPassword() string {
 }
 
 type MountReply struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state             protoimpl.MessageState
 	LogLine           string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	ReplyMessage      string `protobuf:"bytes,2,opt,name=reply_message,json=replyMessage,proto3" json:"reply_message,omitempty"`
-	PasswordRequested bool   `protobuf:"varint,3,opt,name=password_requested,json=passwordRequested,proto3" json:"password_requested,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+	PasswordRequested bool `protobuf:"varint,3,opt,name=password_requested,json=passwordRequested,proto3" json:"password_requested,omitempty"`
 }
 
 func (x *MountReply) Reset() {
@@ -2616,8 +2571,8 @@ func (x *MountReply) GetPasswordRequested() bool {
 
 type PingRequest struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PingRequest) Reset() {
@@ -2652,8 +2607,8 @@ func (*PingRequest) Descriptor() ([]byte, []int) {
 
 type PingReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PingReply) Reset() {
@@ -2688,10 +2643,9 @@ func (*PingReply) Descriptor() ([]byte, []int) {
 
 type InstanceNames struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	InstanceName []string `protobuf:"bytes,1,rep,name=instance_name,json=instanceName,proto3" json:"instance_name,omitempty"`
+	InstanceName  []string `protobuf:"bytes,1,rep,name=instance_name,json=instanceName,proto3" json:"instance_name,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *InstanceNames) Reset() {
@@ -2732,12 +2686,11 @@ func (x *InstanceNames) GetInstanceName() []string {
 }
 
 type RecoverRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
 	InstanceNames  *InstanceNames `protobuf:"bytes,1,opt,name=instance_names,json=instanceNames,proto3" json:"instance_names,omitempty"`
-	VerbosityLevel int32          `protobuf:"varint,2,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+	VerbosityLevel int32 `protobuf:"varint,2,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
 }
 
 func (x *RecoverRequest) Reset() {
@@ -2786,10 +2739,9 @@ func (x *RecoverRequest) GetVerbosityLevel() int32 {
 
 type RecoverReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	LogLine       string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	LogLine string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RecoverReply) Reset() {
@@ -2830,12 +2782,11 @@ func (x *RecoverReply) GetLogLine() string {
 }
 
 type SSHInfoRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
+	unknownFields  protoimpl.UnknownFields
 	InstanceName   []string `protobuf:"bytes,1,rep,name=instance_name,json=instanceName,proto3" json:"instance_name,omitempty"`
-	VerbosityLevel int32    `protobuf:"varint,2,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	sizeCache      protoimpl.SizeCache
+	VerbosityLevel int32 `protobuf:"varint,2,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
 }
 
 func (x *SSHInfoRequest) Reset() {
@@ -2884,13 +2835,12 @@ func (x *SSHInfoRequest) GetVerbosityLevel() int32 {
 
 type SSHInfo struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Port          int32  `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
 	PrivKeyBase64 string `protobuf:"bytes,2,opt,name=priv_key_base64,json=privKeyBase64,proto3" json:"priv_key_base64,omitempty"`
 	Host          string `protobuf:"bytes,3,opt,name=host,proto3" json:"host,omitempty"`
 	Username      string `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+	Port          int32 `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
 }
 
 func (x *SSHInfo) Reset() {
@@ -2953,11 +2903,10 @@ func (x *SSHInfo) GetUsername() string {
 
 type SSHInfoReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	SshInfo       map[string]*SSHInfo `protobuf:"bytes,1,rep,name=ssh_info,json=sshInfo,proto3" json:"ssh_info,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	LogLine       string              `protobuf:"bytes,2,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	SshInfo map[string]*SSHInfo `protobuf:"bytes,1,rep,name=ssh_info,json=sshInfo,proto3" json:"ssh_info,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	LogLine string              `protobuf:"bytes,2,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SSHInfoReply) Reset() {
@@ -3005,11 +2954,10 @@ func (x *SSHInfoReply) GetLogLine() string {
 }
 
 type StartError struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
 	InstanceErrors map[string]StartError_ErrorCode `protobuf:"bytes,1,rep,name=instance_errors,json=instanceErrors,proto3" json:"instance_errors,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3,enum=multipass.StartError_ErrorCode"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *StartError) Reset() {
@@ -3050,14 +2998,13 @@ func (x *StartError) GetInstanceErrors() map[string]StartError_ErrorCode {
 }
 
 type StartRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
 	InstanceNames  *InstanceNames `protobuf:"bytes,1,opt,name=instance_names,json=instanceNames,proto3" json:"instance_names,omitempty"`
-	VerbosityLevel int32          `protobuf:"varint,2,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
-	Timeout        int32          `protobuf:"varint,3,opt,name=timeout,proto3" json:"timeout,omitempty"`
 	Password       string         `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+	VerbosityLevel int32 `protobuf:"varint,2,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	Timeout        int32 `protobuf:"varint,3,opt,name=timeout,proto3" json:"timeout,omitempty"`
 }
 
 func (x *StartRequest) Reset() {
@@ -3119,14 +3066,13 @@ func (x *StartRequest) GetPassword() string {
 }
 
 type StartReply struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state             protoimpl.MessageState
+	UpdateInfo        *UpdateInfo `protobuf:"bytes,3,opt,name=update_info,json=updateInfo,proto3" json:"update_info,omitempty"`
 	LogLine           string      `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	ReplyMessage      string      `protobuf:"bytes,2,opt,name=reply_message,json=replyMessage,proto3" json:"reply_message,omitempty"`
-	UpdateInfo        *UpdateInfo `protobuf:"bytes,3,opt,name=update_info,json=updateInfo,proto3" json:"update_info,omitempty"`
-	PasswordRequested bool        `protobuf:"varint,4,opt,name=password_requested,json=passwordRequested,proto3" json:"password_requested,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+	PasswordRequested bool `protobuf:"varint,4,opt,name=password_requested,json=passwordRequested,proto3" json:"password_requested,omitempty"`
 }
 
 func (x *StartReply) Reset() {
@@ -3188,15 +3134,14 @@ func (x *StartReply) GetPasswordRequested() bool {
 }
 
 type StopRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
 	InstanceNames  *InstanceNames `protobuf:"bytes,1,opt,name=instance_names,json=instanceNames,proto3" json:"instance_names,omitempty"`
-	TimeMinutes    int32          `protobuf:"varint,2,opt,name=time_minutes,json=timeMinutes,proto3" json:"time_minutes,omitempty"`
-	CancelShutdown bool           `protobuf:"varint,3,opt,name=cancel_shutdown,json=cancelShutdown,proto3" json:"cancel_shutdown,omitempty"`
-	VerbosityLevel int32          `protobuf:"varint,4,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
-	ForceStop      bool           `protobuf:"varint,5,opt,name=force_stop,json=forceStop,proto3" json:"force_stop,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+	TimeMinutes    int32 `protobuf:"varint,2,opt,name=time_minutes,json=timeMinutes,proto3" json:"time_minutes,omitempty"`
+	VerbosityLevel int32 `protobuf:"varint,4,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	CancelShutdown bool  `protobuf:"varint,3,opt,name=cancel_shutdown,json=cancelShutdown,proto3" json:"cancel_shutdown,omitempty"`
+	ForceStop      bool  `protobuf:"varint,5,opt,name=force_stop,json=forceStop,proto3" json:"force_stop,omitempty"`
 }
 
 func (x *StopRequest) Reset() {
@@ -3266,10 +3211,9 @@ func (x *StopRequest) GetForceStop() bool {
 
 type StopReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	LogLine       string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	LogLine string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *StopReply) Reset() {
@@ -3310,12 +3254,11 @@ func (x *StopReply) GetLogLine() string {
 }
 
 type SuspendRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
 	InstanceNames  *InstanceNames `protobuf:"bytes,1,opt,name=instance_names,json=instanceNames,proto3" json:"instance_names,omitempty"`
-	VerbosityLevel int32          `protobuf:"varint,2,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+	VerbosityLevel int32 `protobuf:"varint,2,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
 }
 
 func (x *SuspendRequest) Reset() {
@@ -3364,10 +3307,9 @@ func (x *SuspendRequest) GetVerbosityLevel() int32 {
 
 type SuspendReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	LogLine       string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	LogLine string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SuspendReply) Reset() {
@@ -3408,14 +3350,13 @@ func (x *SuspendReply) GetLogLine() string {
 }
 
 type RestartRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
 	InstanceNames  *InstanceNames `protobuf:"bytes,1,opt,name=instance_names,json=instanceNames,proto3" json:"instance_names,omitempty"`
-	VerbosityLevel int32          `protobuf:"varint,2,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
-	Timeout        int32          `protobuf:"varint,3,opt,name=timeout,proto3" json:"timeout,omitempty"`
 	Password       string         `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+	VerbosityLevel int32 `protobuf:"varint,2,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	Timeout        int32 `protobuf:"varint,3,opt,name=timeout,proto3" json:"timeout,omitempty"`
 }
 
 func (x *RestartRequest) Reset() {
@@ -3477,14 +3418,13 @@ func (x *RestartRequest) GetPassword() string {
 }
 
 type RestartReply struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state             protoimpl.MessageState
+	UpdateInfo        *UpdateInfo `protobuf:"bytes,3,opt,name=update_info,json=updateInfo,proto3" json:"update_info,omitempty"`
 	LogLine           string      `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	ReplyMessage      string      `protobuf:"bytes,2,opt,name=reply_message,json=replyMessage,proto3" json:"reply_message,omitempty"`
-	UpdateInfo        *UpdateInfo `protobuf:"bytes,3,opt,name=update_info,json=updateInfo,proto3" json:"update_info,omitempty"`
-	PasswordRequested bool        `protobuf:"varint,4,opt,name=password_requested,json=passwordRequested,proto3" json:"password_requested,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+	PasswordRequested bool `protobuf:"varint,4,opt,name=password_requested,json=passwordRequested,proto3" json:"password_requested,omitempty"`
 }
 
 func (x *RestartReply) Reset() {
@@ -3546,14 +3486,13 @@ func (x *RestartReply) GetPasswordRequested() bool {
 }
 
 type DeleteRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state                 protoimpl.MessageState
+	unknownFields         protoimpl.UnknownFields
 	InstanceSnapshotPairs []*InstanceSnapshotPair `protobuf:"bytes,1,rep,name=instance_snapshot_pairs,json=instanceSnapshotPairs,proto3" json:"instance_snapshot_pairs,omitempty"`
-	Purge                 bool                    `protobuf:"varint,2,opt,name=purge,proto3" json:"purge,omitempty"`
-	VerbosityLevel        int32                   `protobuf:"varint,3,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
-	PurgeSnapshots        bool                    `protobuf:"varint,4,opt,name=purge_snapshots,json=purgeSnapshots,proto3" json:"purge_snapshots,omitempty"`
+	sizeCache             protoimpl.SizeCache
+	VerbosityLevel        int32 `protobuf:"varint,3,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	Purge                 bool  `protobuf:"varint,2,opt,name=purge,proto3" json:"purge,omitempty"`
+	PurgeSnapshots        bool  `protobuf:"varint,4,opt,name=purge_snapshots,json=purgeSnapshots,proto3" json:"purge_snapshots,omitempty"`
 }
 
 func (x *DeleteRequest) Reset() {
@@ -3615,13 +3554,12 @@ func (x *DeleteRequest) GetPurgeSnapshots() bool {
 }
 
 type DeleteReply struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	LogLine                string   `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	state                  protoimpl.MessageState
+	LogLine                string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	unknownFields          protoimpl.UnknownFields
 	PurgedInstances        []string `protobuf:"bytes,2,rep,name=purged_instances,json=purgedInstances,proto3" json:"purged_instances,omitempty"`
-	ConfirmSnapshotPurging bool     `protobuf:"varint,3,opt,name=confirm_snapshot_purging,json=confirmSnapshotPurging,proto3" json:"confirm_snapshot_purging,omitempty"`
+	sizeCache              protoimpl.SizeCache
+	ConfirmSnapshotPurging bool `protobuf:"varint,3,opt,name=confirm_snapshot_purging,json=confirmSnapshotPurging,proto3" json:"confirm_snapshot_purging,omitempty"`
 }
 
 func (x *DeleteReply) Reset() {
@@ -3676,12 +3614,11 @@ func (x *DeleteReply) GetConfirmSnapshotPurging() bool {
 }
 
 type UmountRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
+	unknownFields  protoimpl.UnknownFields
 	TargetPaths    []*TargetPathInfo `protobuf:"bytes,1,rep,name=target_paths,json=targetPaths,proto3" json:"target_paths,omitempty"`
-	VerbosityLevel int32             `protobuf:"varint,2,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	sizeCache      protoimpl.SizeCache
+	VerbosityLevel int32 `protobuf:"varint,2,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
 }
 
 func (x *UmountRequest) Reset() {
@@ -3730,10 +3667,9 @@ func (x *UmountRequest) GetVerbosityLevel() int32 {
 
 type UmountReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	LogLine       string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	LogLine string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UmountReply) Reset() {
@@ -3774,10 +3710,9 @@ func (x *UmountReply) GetLogLine() string {
 }
 
 type VersionRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 	VerbosityLevel int32 `protobuf:"varint,1,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
 }
 
@@ -3820,12 +3755,11 @@ func (x *VersionRequest) GetVerbosityLevel() int32 {
 
 type VersionReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	UpdateInfo    *UpdateInfo `protobuf:"bytes,3,opt,name=update_info,json=updateInfo,proto3" json:"update_info,omitempty"`
+	Version       string      `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	LogLine       string      `protobuf:"bytes,2,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Version    string      `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	LogLine    string      `protobuf:"bytes,2,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
-	UpdateInfo *UpdateInfo `protobuf:"bytes,3,opt,name=update_info,json=updateInfo,proto3" json:"update_info,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *VersionReply) Reset() {
@@ -3880,12 +3814,11 @@ func (x *VersionReply) GetUpdateInfo() *UpdateInfo {
 }
 
 type GetRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
 	Key            string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	VerbosityLevel int32  `protobuf:"varint,2,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+	VerbosityLevel int32 `protobuf:"varint,2,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
 }
 
 func (x *GetRequest) Reset() {
@@ -3934,11 +3867,10 @@ func (x *GetRequest) GetVerbosityLevel() int32 {
 
 type GetReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	Value         string `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	LogLine       string `protobuf:"bytes,2,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Value   string `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
-	LogLine string `protobuf:"bytes,2,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetReply) Reset() {
@@ -3986,14 +3918,13 @@ func (x *GetReply) GetLogLine() string {
 }
 
 type SetRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
 	Key            string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Val            string `protobuf:"bytes,2,opt,name=val,proto3" json:"val,omitempty"`
-	VerbosityLevel int32  `protobuf:"varint,3,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
-	Authorized     bool   `protobuf:"varint,4,opt,name=authorized,proto3" json:"authorized,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+	VerbosityLevel int32 `protobuf:"varint,3,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	Authorized     bool  `protobuf:"varint,4,opt,name=authorized,proto3" json:"authorized,omitempty"`
 }
 
 func (x *SetRequest) Reset() {
@@ -4055,13 +3986,12 @@ func (x *SetRequest) GetAuthorized() bool {
 }
 
 type SetReply struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state              protoimpl.MessageState
 	LogLine            string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	ReplyMessage       string `protobuf:"bytes,2,opt,name=reply_message,json=replyMessage,proto3" json:"reply_message,omitempty"`
-	NeedsAuthorization bool   `protobuf:"varint,3,opt,name=needs_authorization,json=needsAuthorization,proto3" json:"needs_authorization,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+	NeedsAuthorization bool `protobuf:"varint,3,opt,name=needs_authorization,json=needsAuthorization,proto3" json:"needs_authorization,omitempty"`
 }
 
 func (x *SetReply) Reset() {
@@ -4116,10 +4046,9 @@ func (x *SetReply) GetNeedsAuthorization() bool {
 }
 
 type KeysRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 	VerbosityLevel int32 `protobuf:"varint,1,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
 }
 
@@ -4162,11 +4091,10 @@ func (x *KeysRequest) GetVerbosityLevel() int32 {
 
 type KeysReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	LogLine       string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	LogLine      string   `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
-	SettingsKeys []string `protobuf:"bytes,2,rep,name=settings_keys,json=settingsKeys,proto3" json:"settings_keys,omitempty"`
+	SettingsKeys  []string `protobuf:"bytes,2,rep,name=settings_keys,json=settingsKeys,proto3" json:"settings_keys,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *KeysReply) Reset() {
@@ -4214,12 +4142,11 @@ func (x *KeysReply) GetSettingsKeys() []string {
 }
 
 type AuthenticateRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
 	Passphrase     string `protobuf:"bytes,1,opt,name=passphrase,proto3" json:"passphrase,omitempty"`
-	VerbosityLevel int32  `protobuf:"varint,2,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+	VerbosityLevel int32 `protobuf:"varint,2,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
 }
 
 func (x *AuthenticateRequest) Reset() {
@@ -4268,10 +4195,9 @@ func (x *AuthenticateRequest) GetVerbosityLevel() int32 {
 
 type AuthenticateReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	LogLine       string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	LogLine string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AuthenticateReply) Reset() {
@@ -4312,14 +4238,13 @@ func (x *AuthenticateReply) GetLogLine() string {
 }
 
 type SnapshotRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
 	Instance       string `protobuf:"bytes,1,opt,name=instance,proto3" json:"instance,omitempty"`
 	Snapshot       string `protobuf:"bytes,2,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
 	Comment        string `protobuf:"bytes,3,opt,name=comment,proto3" json:"comment,omitempty"`
-	VerbosityLevel int32  `protobuf:"varint,4,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+	VerbosityLevel int32 `protobuf:"varint,4,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
 }
 
 func (x *SnapshotRequest) Reset() {
@@ -4382,11 +4307,10 @@ func (x *SnapshotRequest) GetVerbosityLevel() int32 {
 
 type SnapshotReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	Snapshot      string `protobuf:"bytes,1,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
+	LogLine       string `protobuf:"bytes,2,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Snapshot string `protobuf:"bytes,1,opt,name=snapshot,proto3" json:"snapshot,omitempty"` // automatically generated unless specifically requested
-	LogLine  string `protobuf:"bytes,2,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SnapshotReply) Reset() {
@@ -4434,14 +4358,13 @@ func (x *SnapshotReply) GetLogLine() string {
 }
 
 type RestoreRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
 	Instance       string `protobuf:"bytes,1,opt,name=instance,proto3" json:"instance,omitempty"`
 	Snapshot       string `protobuf:"bytes,2,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
-	Destructive    bool   `protobuf:"varint,3,opt,name=destructive,proto3" json:"destructive,omitempty"`
-	VerbosityLevel int32  `protobuf:"varint,4,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+	VerbosityLevel int32 `protobuf:"varint,4,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	Destructive    bool  `protobuf:"varint,3,opt,name=destructive,proto3" json:"destructive,omitempty"`
 }
 
 func (x *RestoreRequest) Reset() {
@@ -4503,13 +4426,12 @@ func (x *RestoreRequest) GetVerbosityLevel() int32 {
 }
 
 type RestoreReply struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state              protoimpl.MessageState
 	LogLine            string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	ReplyMessage       string `protobuf:"bytes,2,opt,name=reply_message,json=replyMessage,proto3" json:"reply_message,omitempty"`
-	ConfirmDestructive bool   `protobuf:"varint,3,opt,name=confirm_destructive,json=confirmDestructive,proto3" json:"confirm_destructive,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+	ConfirmDestructive bool `protobuf:"varint,3,opt,name=confirm_destructive,json=confirmDestructive,proto3" json:"confirm_destructive,omitempty"`
 }
 
 func (x *RestoreReply) Reset() {
@@ -4564,13 +4486,12 @@ func (x *RestoreReply) GetConfirmDestructive() bool {
 }
 
 type CloneRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	SourceName      string  `protobuf:"bytes,1,opt,name=source_name,json=sourceName,proto3" json:"source_name,omitempty"`
+	state           protoimpl.MessageState
 	DestinationName *string `protobuf:"bytes,2,opt,name=destination_name,json=destinationName,proto3,oneof" json:"destination_name,omitempty"`
-	VerbosityLevel  int32   `protobuf:"varint,3,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
+	SourceName      string  `protobuf:"bytes,1,opt,name=source_name,json=sourceName,proto3" json:"source_name,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+	VerbosityLevel  int32 `protobuf:"varint,3,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
 }
 
 func (x *CloneRequest) Reset() {
@@ -4626,11 +4547,10 @@ func (x *CloneRequest) GetVerbosityLevel() int32 {
 
 type CloneReply struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	ReplyMessage  string `protobuf:"bytes,1,opt,name=reply_message,json=replyMessage,proto3" json:"reply_message,omitempty"`
+	LogLine       string `protobuf:"bytes,2,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	ReplyMessage string `protobuf:"bytes,1,opt,name=reply_message,json=replyMessage,proto3" json:"reply_message,omitempty"`
-	LogLine      string `protobuf:"bytes,2,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CloneReply) Reset() {
@@ -4678,10 +4598,9 @@ func (x *CloneReply) GetLogLine() string {
 }
 
 type DaemonInfoRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 	VerbosityLevel int32 `protobuf:"varint,1,opt,name=verbosity_level,json=verbosityLevel,proto3" json:"verbosity_level,omitempty"`
 }
 
@@ -4723,12 +4642,11 @@ func (x *DaemonInfoRequest) GetVerbosityLevel() int32 {
 }
 
 type DaemonInfoReply struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state          protoimpl.MessageState
 	LogLine        string `protobuf:"bytes,1,opt,name=log_line,json=logLine,proto3" json:"log_line,omitempty"`
+	unknownFields  protoimpl.UnknownFields
 	AvailableSpace uint64 `protobuf:"varint,2,opt,name=available_space,json=availableSpace,proto3" json:"available_space,omitempty"`
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *DaemonInfoReply) Reset() {
@@ -4777,12 +4695,11 @@ func (x *DaemonInfoReply) GetAvailableSpace() uint64 {
 
 type LaunchRequest_NetworkOptions struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	MacAddress    string `protobuf:"bytes,3,opt,name=mac_address,json=macAddress,proto3" json:"mac_address,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Id         string                            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Mode       LaunchRequest_NetworkOptions_Mode `protobuf:"varint,2,opt,name=mode,proto3,enum=multipass.LaunchRequest_NetworkOptions_Mode" json:"mode,omitempty"`
-	MacAddress string                            `protobuf:"bytes,3,opt,name=mac_address,json=macAddress,proto3" json:"mac_address,omitempty"`
+	sizeCache     protoimpl.SizeCache
+	Mode          LaunchRequest_NetworkOptions_Mode `protobuf:"varint,2,opt,name=mode,proto3,enum=multipass.LaunchRequest_NetworkOptions_Mode" json:"mode,omitempty"`
 }
 
 func (x *LaunchRequest_NetworkOptions) Reset() {
@@ -4837,14 +4754,13 @@ func (x *LaunchRequest_NetworkOptions) GetMacAddress() string {
 }
 
 type LaunchReply_Alias struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
+	state            protoimpl.MessageState
 	Name             string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Instance         string `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	Command          string `protobuf:"bytes,3,opt,name=command,proto3" json:"command,omitempty"`
 	WorkingDirectory string `protobuf:"bytes,4,opt,name=working_directory,json=workingDirectory,proto3" json:"working_directory,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *LaunchReply_Alias) Reset() {
@@ -4907,11 +4823,10 @@ func (x *LaunchReply_Alias) GetWorkingDirectory() string {
 
 type FindReply_AliasInfo struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	RemoteName    string `protobuf:"bytes,1,opt,name=remote_name,json=remoteName,proto3" json:"remote_name,omitempty"`
+	Alias         string `protobuf:"bytes,2,opt,name=alias,proto3" json:"alias,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	RemoteName string `protobuf:"bytes,1,opt,name=remote_name,json=remoteName,proto3" json:"remote_name,omitempty"`
-	Alias      string `protobuf:"bytes,2,opt,name=alias,proto3" json:"alias,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FindReply_AliasInfo) Reset() {
@@ -4960,14 +4875,13 @@ func (x *FindReply_AliasInfo) GetAlias() string {
 
 type FindReply_ImageInfo struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	Os            string `protobuf:"bytes,1,opt,name=os,proto3" json:"os,omitempty"`
+	Release       string `protobuf:"bytes,2,opt,name=release,proto3" json:"release,omitempty"`
+	Version       string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	Codename      string `protobuf:"bytes,5,opt,name=codename,proto3" json:"codename,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	Os          string                 `protobuf:"bytes,1,opt,name=os,proto3" json:"os,omitempty"`
-	Release     string                 `protobuf:"bytes,2,opt,name=release,proto3" json:"release,omitempty"`
-	Version     string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
-	AliasesInfo []*FindReply_AliasInfo `protobuf:"bytes,4,rep,name=aliases_info,json=aliasesInfo,proto3" json:"aliases_info,omitempty"`
-	Codename    string                 `protobuf:"bytes,5,opt,name=codename,proto3" json:"codename,omitempty"`
+	AliasesInfo   []*FindReply_AliasInfo `protobuf:"bytes,4,rep,name=aliases_info,json=aliasesInfo,proto3" json:"aliases_info,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FindReply_ImageInfo) Reset() {
@@ -5037,12 +4951,11 @@ func (x *FindReply_ImageInfo) GetCodename() string {
 
 type MountInfo_MountPaths struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	MountMaps     *MountMaps `protobuf:"bytes,3,opt,name=mount_maps,json=mountMaps,proto3" json:"mount_maps,omitempty"`
+	SourcePath    string     `protobuf:"bytes,1,opt,name=source_path,json=sourcePath,proto3" json:"source_path,omitempty"`
+	TargetPath    string     `protobuf:"bytes,2,opt,name=target_path,json=targetPath,proto3" json:"target_path,omitempty"`
 	unknownFields protoimpl.UnknownFields
-
-	SourcePath string     `protobuf:"bytes,1,opt,name=source_path,json=sourcePath,proto3" json:"source_path,omitempty"`
-	TargetPath string     `protobuf:"bytes,2,opt,name=target_path,json=targetPath,proto3" json:"target_path,omitempty"`
-	MountMaps  *MountMaps `protobuf:"bytes,3,opt,name=mount_maps,json=mountMaps,proto3" json:"mount_maps,omitempty"`
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MountInfo_MountPaths) Reset() {
