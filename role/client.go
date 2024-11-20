@@ -3,8 +3,8 @@ package role
 import (
 	"context"
 	"log"
-	"multipass-cluster/api"
-	"multipass-cluster/config"
+	"multiverse/api"
+	"multiverse/config"
 	"os"
 
 	"github.com/jedib0t/go-pretty/v6/table"

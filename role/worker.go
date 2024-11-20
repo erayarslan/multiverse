@@ -2,9 +2,9 @@ package role
 
 import (
 	"log"
-	"multipass-cluster/agent"
-	"multipass-cluster/cluster"
-	"multipass-cluster/config"
+	"multiverse/agent"
+	"multiverse/cluster"
+	"multiverse/config"
 )
 
 type worker struct {

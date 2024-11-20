@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"multipass-cluster/agent"
+	"multiverse/agent"
 	"time"
 
 	"google.golang.org/grpc"

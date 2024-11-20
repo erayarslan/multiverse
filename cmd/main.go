@@ -2,15 +2,15 @@ package main
 
 import (
 	"log"
-	"multipass-cluster/config"
-	"multipass-cluster/role"
+	"multiverse/config"
+	"multiverse/role"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
 func main() {
-	defer log.Printf("multipass cluster is shutting down")
+	defer log.Printf("Multiverse is shutting down")
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	cfg := config.NewConfig()

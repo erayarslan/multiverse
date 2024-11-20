@@ -3,7 +3,7 @@ package cluster
 import (
 	"fmt"
 	"log"
-	"multipass-cluster/agent"
+	"multiverse/agent"
 	"net"
 	"strings"
 	"sync"

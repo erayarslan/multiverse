@@ -1,4 +1,4 @@
-module multipass-cluster
+module multiverse
 
 godebug x509negativeserial=1
 

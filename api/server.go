@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"multipass-cluster/agent"
-	"multipass-cluster/cluster"
+	"multiverse/agent"
+	"multiverse/cluster"
 	"net"
 
 	"google.golang.org/grpc/metadata"

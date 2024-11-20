@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"multipass-cluster/multipass"
+	"multiverse/multipass"
 	"net"
 	"strconv"
 

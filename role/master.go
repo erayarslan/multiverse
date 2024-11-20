@@ -2,9 +2,9 @@ package role
 
 import (
 	"log"
-	"multipass-cluster/api"
-	"multipass-cluster/cluster"
-	"multipass-cluster/config"
+	"multiverse/api"
+	"multiverse/cluster"
+	"multiverse/config"
 )
 
 type master struct {

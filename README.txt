@@ -1,25 +1,30 @@
-brew install protobuf
-go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-protoc --go_out=. --go-grpc_out=. */*.proto
+# Multiverse (WARNING, this is a work in progress)
 
-go build cmd/main.go
-./main -master -worker
-./main -worker
-./main -client
+## Introduction
 
+Multiverse is a multi node Multipass cluster management system. It is designed to manage a cluster of Multipass instances.
+It is aim to provide a simple way to create, start, stop, delete, shell and manage Multipass instances from any machine.
+It is looks like a kubectl but for Multipass.
+
+## Test
+
+ > make init
+ > make build
+ > make test
+
+## Architecture
                                                          ┌───────────────────────────────────┐
-                                                         │       multipass client cli        │
+                                                         │       multiverse client cli       │
                                                          │                                   │
                                                          │ ┌───────────────────────────────┐ │
                                                          │ │          api client           │─┼┐
  ┌───────────────────────────────────┐                   │ └───────────────────────────────┘ ││
- │   multipass cluster worker node   │                   └───────────────────────────────────┘│
+ │       multiverse worker node      │                   └───────────────────────────────────┘│
  │   ┌──────┐  ┌──────┐  ┌──────┐    │                                                        │
  │   │ vm01 │  │ vm02 │  │ vm03 │    │                                                      user
  │   └──────┘  └──────┘  └──────┘    │                                                    request
  │       │         │         │       │                 ┌───────────────────────────────────┐  │
- │       └─────────┼─────────┘       │                 │   multipass cluster master node   │  │
+ │       └─────────┼─────────┘       │                 │       multiverse master node      │  │
  │                 ▼                 │                 │                                   │  │
  │      ┌────────────────────┐       │                 │ ┌───────────────────────────────┐ │  │
  │      │ multipass service  │       │                 │ │          api server           │◀┼──┘
