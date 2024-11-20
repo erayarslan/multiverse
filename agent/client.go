@@ -2,13 +2,11 @@ package agent
 
 import (
 	"context"
-	"io"
-	"log"
-	"os"
+	"fmt"
 
-	"golang.org/x/term"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 )
 
 type client struct {
@@ -18,7 +16,7 @@ type client struct {
 
 type Client interface {
 	List(ctx context.Context) ([]string, error)
-	Shell(ctx context.Context, instanceName string) error
+	Shell(ctx context.Context) (grpc.BidiStreamingClient[ShellRequest, ShellReply], error)
 	Close() error
 }
 
@@ -27,58 +25,23 @@ func (c *client) Close() error {
 }
 
 func (c *client) List(ctx context.Context) ([]string, error) {
+	names := make([]string, 0)
+
 	response, err := c.client.List(ctx, &ListRequest{})
+	if err != nil {
+		return names, err
+	}
 
 	return response.GetNames(), err
 }
 
-func (c *client) Shell(ctx context.Context, instanceName string) error {
-	fdOut := int(os.Stdout.Fd())
-	_ = int(os.Stdin.Fd())
-	state, err := term.MakeRaw(fdOut)
-	if err != nil {
-		return err
+func (c *client) Shell(ctx context.Context) (grpc.BidiStreamingClient[ShellRequest, ShellReply], error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, fmt.Errorf("metadata not found")
 	}
-	defer func(fd int, oldState *term.State) {
-		err := term.Restore(fd, oldState)
-		if err != nil {
-			panic(err)
-		}
-	}(fdOut, state)
-
-	w, h, err := term.GetSize(fdOut)
-	if err != nil {
-		return err
-	}
-
-	stream, err := c.client.Shell(ctx)
-	if err != nil {
-		return err
-	}
-
-	err = stream.Send(&ShellRequest{
-		InstanceName: instanceName,
-		Height:       int64(h),
-		Width:        int64(w),
-		InBuffer:     make([]byte, 0),
-	})
-	if err != nil {
-		return err
-	}
-
-	for {
-		in, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		log.Printf("received on worker: %s", in)
-	}
-
-	return stream.CloseSend()
+	ctx = metadata.NewOutgoingContext(context.Background(), md.Copy())
+	return c.client.Shell(ctx)
 }
 
 func NewClient(addr string) (Client, error) {

@@ -3,16 +3,15 @@ package agent
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"io"
 	"multipass-cluster/multipass"
 	"net"
-	"os"
+	"strconv"
 
-	"golang.org/x/crypto/ssh"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 )
 
 type Info struct {
@@ -77,7 +76,7 @@ func (s *server) List(ctx context.Context, _ *ListRequest) (*ListReply, error) {
 		return response, nil
 	}
 
-	if listReplyInstanceList, ok := listContents.(*multipass.ListReply_InstanceList); !ok {
+	if listReplyInstanceList, ok := listContents.(*multipass.ListReply_InstanceList); ok {
 		instances := listReplyInstanceList.InstanceList.GetInstances()
 		for _, instance := range instances {
 			response.Names = append(response.Names, instance.Name)
@@ -87,22 +86,12 @@ func (s *server) List(ctx context.Context, _ *ListRequest) (*ListReply, error) {
 	return response, nil
 }
 
-type shellReqReader struct {
+type shellRequestReader struct {
 	stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
-	done   bool
 }
 
-func (s *shellReqReader) Read(p []byte) (n int, err error) {
-	if s.done {
-		return 0, io.EOF
-	}
-
+func (s *shellRequestReader) Read(p []byte) (n int, err error) {
 	in, err := s.stream.Recv()
-	if err == io.EOF {
-		s.done = true
-		return 0, io.EOF
-	}
-
 	if err != nil {
 		return 0, err
 	}
@@ -111,12 +100,19 @@ func (s *shellReqReader) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-type shellReqWriter struct {
+type shellReplyWriter struct {
 	stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
+	isErr  bool
 }
 
-func (s *shellReqWriter) Write(p []byte) (n int, err error) {
-	err = s.stream.Send(&ShellReply{OutBuffer: p})
+func (s *shellReplyWriter) Write(p []byte) (n int, err error) {
+	reply := &ShellReply{}
+	if s.isErr {
+		reply.ErrBuffer = p
+	} else {
+		reply.OutBuffer = p
+	}
+	err = s.stream.Send(reply)
 	if err != nil {
 		return 0, err
 	}
@@ -125,112 +121,55 @@ func (s *shellReqWriter) Write(p []byte) (n int, err error) {
 }
 
 func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]) error {
-	outW := &shellReqWriter{stream: stream}
-	errW := &shellReqWriter{stream: stream}
-	inR := &shellReqReader{stream: stream}
+	stdout := &shellReplyWriter{stream: stream, isErr: false}
+	stderr := &shellReplyWriter{stream: stream, isErr: true}
+	stdin := &shellRequestReader{stream: stream}
 
-	for {
-		in, err := stream.Recv()
-		if err != nil {
-			return err
-		}
-
-		err = s.ssh(stream.Context(), in.GetInstanceName(), int(in.GetHeight()), int(in.GetWidth()), outW, errW, inR)
-		if err != nil {
-			return err
-		}
-	}
-}
-
-//nolint:funlen
-func (s *server) ssh(ctx context.Context, instanceName string, height int, width int, outW io.Writer, errW io.Writer, inR io.Reader) error {
-	stream, err := s.multipassClient.SshInfo(ctx)
+	sshInfoStream, err := s.multipassClient.SshInfo(context.Background())
 	if err != nil {
 		return err
 	}
 
+	md, ok := metadata.FromIncomingContext(stream.Context())
+	if !ok {
+		return fmt.Errorf("metadata not found in context")
+	}
+
+	instanceName := md.Get("instanceName")
+	if len(instanceName) == 0 {
+		return fmt.Errorf("instance name not found in context")
+	}
+
 	res, err := streamHandler[multipass.SSHInfoRequest, multipass.SSHInfoReply](
-		stream,
+		sshInfoStream,
 		&multipass.SSHInfoRequest{
-			InstanceName: []string{instanceName},
+			InstanceName: []string{instanceName[0]},
 		},
 	)
 	if err != nil {
 		return err
 	}
 
-	info, ok := res.SshInfo[instanceName]
+	height := md.Get("height")
+	if len(height) == 0 {
+		return fmt.Errorf("height not found in context")
+	}
+
+	width := md.Get("width")
+	if len(width) == 0 {
+		return fmt.Errorf("width not found in context")
+	}
+
+	info, ok := res.SshInfo[instanceName[0]]
 	if !ok {
 		return fmt.Errorf("instance not found: %s", instanceName)
 	}
 
-	signer, err := ssh.ParsePrivateKey([]byte(info.PrivKeyBase64))
-	if err != nil {
-		return err
-	}
+	h, _ := strconv.Atoi(height[0])
+	w, _ := strconv.Atoi(width[0])
 
-	config := &ssh.ClientConfig{
-		User: info.Username,
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(signer),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(), // nolint:gosec
-	}
-
-	sshClient, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", info.Host, info.Port), config)
-	if err != nil {
-		return err
-	}
-	defer func(client *ssh.Client) {
-		err := client.Close()
-		if err != nil {
-			panic(err)
-		}
-	}(sshClient)
-
-	sshSession, err := sshClient.NewSession()
-	if err != nil {
-		return err
-	}
-	defer func(session *ssh.Session) {
-		err := session.Close()
-		if err == io.EOF {
-			return
-		}
-		if err != nil {
-			panic(err)
-		}
-	}(sshSession)
-
-	modes := ssh.TerminalModes{
-		ssh.ECHO:          1,
-		ssh.TTY_OP_ISPEED: 14400,
-		ssh.TTY_OP_OSPEED: 14400,
-	}
-
-	term := os.Getenv("TERM")
-	if term == "" {
-		term = "xterm"
-	}
-
-	if err := sshSession.RequestPty(term, height, width, modes); err != nil {
-		return err
-	}
-
-	sshSession.Stdout = outW
-	sshSession.Stderr = errW
-	sshSession.Stdin = inR
-
-	if err := sshSession.Shell(); err != nil {
-		return err
-	}
-
-	if err := sshSession.Wait(); err != nil {
-		var e *ssh.ExitError
-		if errors.As(err, &e) && e.ExitStatus() == 130 {
-			return nil
-		}
-
+	ssh := NewSSH(info.Host, int(info.Port), info.Username, []byte(info.PrivKeyBase64), stdout, stderr, stdin, h, w)
+	if err = ssh.Start(); err != nil {
 		return err
 	}
 

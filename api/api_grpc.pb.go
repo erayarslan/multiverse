@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Rpc_List_FullMethodName = "/api.Rpc/list"
+	Rpc_List_FullMethodName  = "/api.Rpc/list"
+	Rpc_Shell_FullMethodName = "/api.Rpc/shell"
 )
 
 // RpcClient is the client API for Rpc service.
@@ -27,6 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RpcClient interface {
 	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListReply, error)
+	Shell(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ShellRequest, ShellReply], error)
 }
 
 type rpcClient struct {
@@ -47,11 +49,25 @@ func (c *rpcClient) List(ctx context.Context, in *ListRequest, opts ...grpc.Call
 	return out, nil
 }
 
+func (c *rpcClient) Shell(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ShellRequest, ShellReply], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Rpc_ServiceDesc.Streams[0], Rpc_Shell_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[ShellRequest, ShellReply]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Rpc_ShellClient = grpc.BidiStreamingClient[ShellRequest, ShellReply]
+
 // RpcServer is the server API for Rpc service.
 // All implementations must embed UnimplementedRpcServer
 // for forward compatibility.
 type RpcServer interface {
 	List(context.Context, *ListRequest) (*ListReply, error)
+	Shell(grpc.BidiStreamingServer[ShellRequest, ShellReply]) error
 	mustEmbedUnimplementedRpcServer()
 }
 
@@ -64,6 +80,9 @@ type UnimplementedRpcServer struct{}
 
 func (UnimplementedRpcServer) List(context.Context, *ListRequest) (*ListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
+}
+func (UnimplementedRpcServer) Shell(grpc.BidiStreamingServer[ShellRequest, ShellReply]) error {
+	return status.Errorf(codes.Unimplemented, "method Shell not implemented")
 }
 func (UnimplementedRpcServer) mustEmbedUnimplementedRpcServer() {}
 func (UnimplementedRpcServer) testEmbeddedByValue()             {}
@@ -104,6 +123,13 @@ func _Rpc_List_Handler(srv interface{}, ctx context.Context, dec func(interface{
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Rpc_Shell_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RpcServer).Shell(&grpc.GenericServerStream[ShellRequest, ShellReply]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Rpc_ShellServer = grpc.BidiStreamingServer[ShellRequest, ShellReply]
+
 // Rpc_ServiceDesc is the grpc.ServiceDesc for Rpc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -116,6 +142,13 @@ var Rpc_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Rpc_List_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "shell",
+			Handler:       _Rpc_Shell_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "api/api.proto",
 }

@@ -12,9 +12,11 @@ import (
 func main() {
 	defer log.Printf("multipass cluster is shutting down")
 
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	cfg := config.NewConfig()
 
 	closeCh := make(chan os.Signal, 1)
+	doneCh := make(chan struct{}, 1)
 	signal.Notify(closeCh, syscall.SIGTERM, syscall.SIGINT, syscall.SIGABRT, syscall.SIGQUIT)
 
 	var roles []role.Role
@@ -28,7 +30,7 @@ func main() {
 	}
 
 	if cfg.IsClient {
-		roles = append(roles, role.NewClient(cfg))
+		roles = append(roles, role.NewClient(cfg, doneCh))
 	}
 
 	if len(roles) == 0 {
@@ -51,5 +53,8 @@ func main() {
 		}
 	}
 
-	<-closeCh
+	select {
+	case <-doneCh:
+	case <-closeCh:
+	}
 }

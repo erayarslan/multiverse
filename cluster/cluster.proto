@@ -12,8 +12,8 @@ message AgentInfo {
 }
 
 message JoinRequest {
-  string hostname = 1;
-  AgentInfo agentInfo = 2;
+  string node_name = 1;
+  AgentInfo agent_info = 2;
 }
 
 message JoinReply {

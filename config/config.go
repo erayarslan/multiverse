@@ -8,15 +8,20 @@ import (
 )
 
 type Config struct {
-	MasterAddr            string
+	MultipassKeyFilePath  string
+	NodeName              string
 	APIServerAddr         string
 	MultipassAddr         string
 	MultipassProxyBind    string
 	MultipassCertFilePath string
-	MultipassKeyFilePath  string
-	IsMaster              bool
-	IsWorker              bool
+	MasterAddr            string
+	ShellInstanceName     string
+	ShellNodeName         string
 	IsClient              bool
+	IsWorker              bool
+	Shell                 bool
+	List                  bool
+	IsMaster              bool
 }
 
 func NewConfig() *Config {
@@ -26,6 +31,13 @@ func NewConfig() *Config {
 	if err != nil {
 		log.Fatalf("error while getting user config dir: %v", err)
 	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		log.Fatalf("error while getting hostname: %v", err)
+	}
+
+	cfg.NodeName = hostname
 
 	defaultMultipassAddr := "unix:///var/run/multipass_socket" // nolint:gosec
 	if runtime.GOOS == "windows" {
@@ -45,6 +57,10 @@ func NewConfig() *Config {
 	flag.StringVar(&cfg.MultipassProxyBind, "multipass-proxy-bind", "localhost", "multipass proxy bind to listen on")
 	flag.StringVar(&cfg.MultipassCertFilePath, "multipass-cert-file", defaultMultipassCertFilePath, "multipass cert file for tls")
 	flag.StringVar(&cfg.MultipassKeyFilePath, "multipass-key-file", defaultMultiPassKeyFilePath, "multipass key file for tls")
+	flag.BoolVar(&cfg.List, "list", false, "list instances")
+	flag.BoolVar(&cfg.Shell, "shell", false, "run as shell")
+	flag.StringVar(&cfg.ShellNodeName, "shell-node-name", "", "shell node name")
+	flag.StringVar(&cfg.ShellInstanceName, "shell-instance-name", "", "shell instance name")
 
 	flag.Parse()
 

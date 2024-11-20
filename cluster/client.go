@@ -3,9 +3,9 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"multipass-cluster/agent"
-	"os"
 	"time"
 
 	"google.golang.org/grpc"
@@ -14,9 +14,13 @@ import (
 )
 
 type client struct {
-	conn   *grpc.ClientConn
-	client RpcClient
-	port   int64
+	stream   grpc.BidiStreamingClient[JoinRequest, JoinReply]
+	client   RpcClient
+	conn     *grpc.ClientConn
+	uuid     string
+	nodeName string
+	port     int64
+	closed   bool
 }
 
 type Client interface {
@@ -25,6 +29,12 @@ type Client interface {
 }
 
 func (c *client) Close() error {
+	c.closed = true
+	if c.stream != nil {
+		if err := c.stream.CloseSend(); err != nil {
+			log.Printf("error while closing stream: %v", err)
+		}
+	}
 	return c.conn.Close()
 }
 
@@ -32,7 +42,7 @@ func (c *client) Join() error {
 	if !c.isReady() {
 		return fmt.Errorf("could not connect")
 	}
-	if err := c.join(); err != nil {
+	if err := c.join(); err != nil && !c.closed {
 		log.Printf("error while joining: %v", err)
 		log.Printf("reconnecting...")
 		return c.Join()
@@ -58,18 +68,14 @@ func (c *client) isReady() bool {
 }
 
 func (c *client) join() error {
-	stream, err := c.client.Join(context.Background())
+	var err error
+	c.stream, err = c.client.Join(context.Background())
 	if err != nil {
 		return err
 	}
 
-	hostname, err := os.Hostname()
-	if err != nil {
-		return err
-	}
-
-	err = stream.Send(&JoinRequest{
-		Hostname: hostname,
+	err = c.stream.Send(&JoinRequest{
+		NodeName: c.nodeName,
 		AgentInfo: &AgentInfo{
 			Port: c.port,
 		},
@@ -78,30 +84,23 @@ func (c *client) join() error {
 		return err
 	}
 
-	ctx := stream.Context()
-	errCh := make(chan error, 1)
-
-	go func() {
-		for {
-			response, err := stream.Recv()
-			if err != nil {
-				errCh <- err
-				return
-			} else {
-				log.Printf("received on worker: %s", response)
-			}
+	for {
+		response, err := c.stream.Recv()
+		if err == io.EOF {
+			break
 		}
-	}()
 
-	go func() {
-		<-ctx.Done()
-		errCh <- ctx.Err()
-	}()
+		if err != nil {
+			return err
+		}
 
-	return <-errCh
+		c.uuid = response.Uuid
+	}
+
+	return nil
 }
 
-func NewClient(addr string, agentServer agent.Server) (Client, error) {
+func NewClient(addr string, nodeName string, agentServer agent.Server) (Client, error) {
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	conn, err := grpc.NewClient(addr, opts...)
 	if err != nil {
@@ -109,8 +108,9 @@ func NewClient(addr string, agentServer agent.Server) (Client, error) {
 	}
 	rpcClient := NewRpcClient(conn)
 	return &client{
-		conn:   conn,
-		client: rpcClient,
-		port:   int64(agentServer.Port()),
+		conn:     conn,
+		client:   rpcClient,
+		port:     int64(agentServer.Port()),
+		nodeName: nodeName,
 	}, nil
 }

@@ -13,39 +13,46 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
+type Worker struct {
+	AgentClient agent.Client
+	Stream      grpc.BidiStreamingServer[JoinRequest, JoinReply]
+	NodeName    string
+	UUID        string
+}
+
 type server struct {
 	UnimplementedRpcServer
 	listener   net.Listener
-	clients    *map[string]agent.Client
+	workers    *map[string]Worker
 	grpcServer *grpc.Server
-	clientsMu  sync.RWMutex
+	workersMu  sync.RWMutex
 }
 
 type Server interface {
-	GetClients() *map[string]agent.Client
+	GetWorkers() *map[string]Worker
 	Serve() error
 }
 
-func (s *server) GetClients() *map[string]agent.Client {
-	s.clientsMu.Lock()
-	defer s.clientsMu.Unlock()
-	return s.clients
+func (s *server) GetWorkers() *map[string]Worker {
+	s.workersMu.Lock()
+	defer s.workersMu.Unlock()
+	return s.workers
 }
 
-func (s *server) addClient(uid string, client agent.Client) {
-	s.clientsMu.Lock()
-	defer s.clientsMu.Unlock()
-	(*s.clients)[uid] = client
+func (s *server) addWorker(uid string, worker Worker) {
+	s.workersMu.Lock()
+	defer s.workersMu.Unlock()
+	(*s.workers)[uid] = worker
 }
 
-func (s *server) removeClient(uid string) {
-	s.clientsMu.Lock()
-	defer s.clientsMu.Unlock()
-	err := (*s.clients)[uid].Close()
+func (s *server) removeWorker(uid string) {
+	s.workersMu.Lock()
+	defer s.workersMu.Unlock()
+	err := (*s.workers)[uid].AgentClient.Close()
 	if err != nil {
-		log.Printf("failed to close agent client: %v", err)
+		log.Printf("failed to close agent client of worker: %v", err)
 	}
-	delete(*s.clients, uid)
+	delete(*s.workers, uid)
 }
 
 func (s *server) Serve() error {
@@ -55,7 +62,7 @@ func (s *server) Serve() error {
 func (s *server) Join(stream grpc.BidiStreamingServer[JoinRequest, JoinReply]) error {
 	id := uuid.Must(uuid.NewRandom()).String()
 	defer log.Printf("client disconnected: %s", id)
-	defer s.removeClient(id)
+	defer s.removeWorker(id)
 
 	p, ok := peer.FromContext(stream.Context())
 	if !ok {
@@ -80,9 +87,14 @@ func (s *server) Join(stream grpc.BidiStreamingServer[JoinRequest, JoinReply]) e
 			return fmt.Errorf("failed to create multipass client: %w", err)
 		}
 
-		s.addClient(id, agentClient)
+		s.addWorker(id, Worker{
+			AgentClient: agentClient,
+			Stream:      stream,
+			NodeName:    request.NodeName,
+			UUID:        id,
+		})
 
-		log.Printf("joined hostname: %s", request.Hostname)
+		log.Printf("joined node name: %s", request.NodeName)
 	}
 }
 
@@ -94,8 +106,8 @@ func NewServer(addr string) (Server, error) {
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 	server := &server{
-		clientsMu:  sync.RWMutex{},
-		clients:    &map[string]agent.Client{},
+		workersMu:  sync.RWMutex{},
+		workers:    &map[string]Worker{},
 		listener:   lis,
 		grpcServer: grpcServer,
 	}

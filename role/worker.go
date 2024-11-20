@@ -20,7 +20,7 @@ func (c *worker) Execute() error {
 		log.Fatalf("error while creating multipass proxy: %v", err)
 	}
 
-	c.clusterClient, err = cluster.NewClient(c.cfg.MasterAddr, server)
+	c.clusterClient, err = cluster.NewClient(c.cfg.MasterAddr, c.cfg.NodeName, server)
 	if err != nil {
 		log.Fatalf("error while creating worker: %v", err)
 	}

@@ -5,11 +5,26 @@ option go_package = "./api";
 
 service Rpc {
   rpc list (ListRequest) returns (ListReply) {};
+  rpc shell (stream ShellRequest) returns (stream ShellReply) {};
 }
 
 message ListRequest {
 }
 
+message Instance {
+  string nodeName = 1;
+  string instanceName = 2;
+}
+
 message ListReply {
-  repeated string names = 1;
+  repeated Instance instances = 1;
+}
+
+message ShellRequest {
+  bytes in_buffer = 1;
+}
+
+message ShellReply {
+  bytes out_buffer = 1;
+  bytes err_buffer = 2;
 }
