@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io"
+	"multiverse/common"
 	"multiverse/multipass"
 	"net"
 	"strconv"
@@ -30,24 +30,6 @@ type server struct {
 	grpcServer      *grpc.Server
 }
 
-func streamHandler[Req any, Res any](stream grpc.BidiStreamingClient[Req, Res], req *Req) (res *Res, err error) {
-	err = stream.Send(req)
-	if err != nil {
-		return nil, err
-	}
-
-	in, err := stream.Recv()
-	if err == io.EOF {
-		err = stream.CloseSend()
-		return nil, err
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}
-
 func (s *server) Serve() error {
 	return s.grpcServer.Serve(s.listener)
 }
@@ -62,7 +44,7 @@ func (s *server) List(ctx context.Context, _ *ListRequest) (*ListReply, error) {
 		return nil, err
 	}
 
-	res, err := streamHandler[multipass.ListRequest, multipass.ListReply](stream, &multipass.ListRequest{})
+	res, err := common.ExecuteOnceWithBidiClient(stream, &multipass.ListRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +103,7 @@ func (s *shellReplyWriter) Write(p []byte) (n int, err error) {
 }
 
 func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]) error {
-	stdout := &shellReplyWriter{stream: stream, isErr: false}
+	stdout := &shellReplyWriter{stream: stream}
 	stderr := &shellReplyWriter{stream: stream, isErr: true}
 	stdin := &shellRequestReader{stream: stream}
 
@@ -140,7 +122,7 @@ func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
 		return fmt.Errorf("instance name not found in context")
 	}
 
-	res, err := streamHandler[multipass.SSHInfoRequest, multipass.SSHInfoReply](
+	res, err := common.ExecuteOnceWithBidiClient(
 		sshInfoStream,
 		&multipass.SSHInfoRequest{
 			InstanceName: []string{instanceName[0]},

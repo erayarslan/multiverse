@@ -3,11 +3,14 @@ package api
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"multiverse/agent"
 	"multiverse/cluster"
+	"multiverse/common"
 	"net"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"google.golang.org/grpc/metadata"
 
@@ -33,15 +36,15 @@ func (s *server) List(ctx context.Context, _ *ListRequest) (*ListReply, error) {
 	listReply := &ListReply{
 		Instances: make([]*Instance, 0),
 	}
-	for _, worker := range *s.clusterServer.GetWorkers() {
-		names, err := worker.AgentClient.List(ctx)
+	for _, workerInfo := range s.clusterServer.GetWorkerInfoMap() {
+		names, err := workerInfo.AgentClient.List(ctx)
 		if err != nil {
 			return nil, err
 		}
 
 		for _, name := range names {
 			listReply.Instances = append(listReply.Instances, &Instance{
-				NodeName:     worker.NodeName,
+				NodeName:     workerInfo.NodeName,
 				InstanceName: name,
 			})
 		}
@@ -67,9 +70,9 @@ func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
 	}
 
 	var agentClient agent.Client
-	for _, worker := range *s.clusterServer.GetWorkers() {
-		if worker.NodeName == nodeName[0] {
-			agentClient = worker.AgentClient
+	for _, workerInfo := range s.clusterServer.GetWorkerInfoMap() {
+		if workerInfo.NodeName == nodeName[0] {
+			agentClient = workerInfo.AgentClient
 			break
 		}
 	}
@@ -77,50 +80,33 @@ func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
 		return fmt.Errorf("agent client not found on node name: %s", nodeName[0])
 	}
 
-	agentStream, err := agentClient.Shell(stream.Context())
+	ctx := metadata.NewOutgoingContext(context.Background(), md.Copy())
+	agentStream, err := agentClient.Shell(ctx)
 	if err != nil {
 		return err
 	}
 
 	go func() {
-		for {
-			in, err := stream.Recv()
-			if err == io.EOF {
-				break
-			}
-
-			if err != nil {
+		err := common.ListenBidiServer(stream, func(req *ShellRequest) error {
+			return agentStream.Send(&agent.ShellRequest{
+				InBuffer: req.GetInBuffer(),
+			})
+		})
+		if err != nil {
+			if s, ok := status.FromError(err); ok && s.Code() == codes.Canceled {
 				return
-			}
-
-			if err = agentStream.Send(&agent.ShellRequest{
-				InBuffer: in.GetInBuffer(),
-			}); err != nil {
-				log.Printf("failed to send shell request: %v", err)
-				return
+			} else {
+				log.Printf("failed to listen stream: %v", err)
 			}
 		}
 	}()
 
-	for {
-		in, err := agentStream.Recv()
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			return err
-		}
-
-		if err = stream.Send(&ShellReply{
-			OutBuffer: in.GetOutBuffer(),
-			ErrBuffer: in.GetErrBuffer(),
-		}); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return common.ListenBidiClient(agentStream, func(res *agent.ShellReply) error {
+		return stream.Send(&ShellReply{
+			OutBuffer: res.GetOutBuffer(),
+			ErrBuffer: res.GetErrBuffer(),
+		})
+	})
 }
 
 func NewServer(addr string, clusterServer cluster.Server) (Server, error) {

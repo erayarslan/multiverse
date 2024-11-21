@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"multiverse/common"
 	"os"
 
 	"golang.org/x/term"
@@ -46,10 +47,10 @@ func (s *shellRequestWriter) Write(p []byte) (n int, err error) {
 }
 
 func (c *client) Shell(ctx context.Context, nodeName string, instanceName string) error {
-	fdIn := int(os.Stdin.Fd())
-	fdOut := int(os.Stdout.Fd())
+	stdInFd := int(os.Stdin.Fd())
+	stdOutFd := int(os.Stdout.Fd())
 
-	w, h, err := term.GetSize(fdOut)
+	w, h, err := term.GetSize(stdOutFd)
 	if err != nil {
 		return err
 	}
@@ -66,7 +67,7 @@ func (c *client) Shell(ctx context.Context, nodeName string, instanceName string
 		return err
 	}
 
-	state, err := term.MakeRaw(fdIn)
+	state, err := term.MakeRaw(stdInFd)
 	if err != nil {
 		return err
 	}
@@ -76,39 +77,27 @@ func (c *client) Shell(ctx context.Context, nodeName string, instanceName string
 			panic(err)
 		}
 		log.Printf("restored terminal state")
-	}(fdIn, state)
+	}(stdInFd, state)
 
 	stdin := &shellRequestWriter{stream: stream}
 
 	go func() {
-		_, err := io.Copy(stdin, os.Stdin)
-		if err != nil {
+		var err error
+		if _, err = io.Copy(stdin, os.Stdin); err != nil {
 			log.Printf("failed to copy stdin: %v", err)
 		}
 	}()
 
-	for {
-		in, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
+	return common.ListenBidiClient(stream, func(res *ShellReply) error {
+		var err error
+		if _, err = os.Stdout.Write(res.GetOutBuffer()); err != nil {
 			return err
 		}
-
-		_, err = os.Stdout.Write(in.GetOutBuffer())
-		if err != nil {
+		if _, err = os.Stderr.Write(res.GetErrBuffer()); err != nil {
 			return err
 		}
-
-		_, err = os.Stderr.Write(in.GetErrBuffer())
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+		return nil
+	})
 }
 
 func NewClient(addr string) (Client, error) {

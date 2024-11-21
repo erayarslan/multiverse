@@ -27,13 +27,15 @@ func (c *master) Execute() error {
 	}
 
 	go func() {
-		if err := clusterServer.Serve(); err != nil {
+		var err error
+		if err = clusterServer.Serve(); err != nil {
 			log.Fatalf("error while serving api server: %v", err)
 		}
 	}()
 
 	go func() {
-		if err := apiServer.Serve(); err != nil {
+		var err error
+		if err = apiServer.Serve(); err != nil {
 			log.Fatalf("error while serving master: %v", err)
 		}
 	}()

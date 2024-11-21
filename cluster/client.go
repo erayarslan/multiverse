@@ -3,9 +3,9 @@ package cluster
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"multiverse/agent"
+	"multiverse/common"
 	"time"
 
 	"google.golang.org/grpc"
@@ -74,30 +74,19 @@ func (c *client) join() error {
 		return err
 	}
 
-	err = c.stream.Send(&JoinRequest{
+	if err = c.stream.Send(&JoinRequest{
 		NodeName: c.nodeName,
 		AgentInfo: &AgentInfo{
 			Port: c.port,
 		},
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 
-	for {
-		response, err := c.stream.Recv()
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			return err
-		}
-
-		c.uuid = response.Uuid
-	}
-
-	return nil
+	return common.ListenBidiClient(c.stream, func(res *JoinReply) error {
+		c.uuid = res.Uuid
+		return nil
+	})
 }
 
 func NewClient(addr string, nodeName string, agentServer agent.Server) (Client, error) {

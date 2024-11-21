@@ -2,11 +2,9 @@ package agent
 
 import (
 	"context"
-	"fmt"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 )
 
 type client struct {
@@ -36,11 +34,6 @@ func (c *client) List(ctx context.Context) ([]string, error) {
 }
 
 func (c *client) Shell(ctx context.Context) (grpc.BidiStreamingClient[ShellRequest, ShellReply], error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return nil, fmt.Errorf("metadata not found")
-	}
-	ctx = metadata.NewOutgoingContext(context.Background(), md.Copy())
 	return c.client.Shell(ctx)
 }
 

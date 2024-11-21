@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 
 	goSsh "golang.org/x/crypto/ssh"
@@ -84,8 +83,6 @@ func (s *ssh) Start() error {
 
 		return err
 	}
-
-	log.Printf("shell finished")
 
 	return nil
 }
