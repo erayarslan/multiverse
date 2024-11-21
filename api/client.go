@@ -7,8 +7,9 @@ import (
 	"log"
 	"multiverse/common"
 	"os"
-	"os/signal"
-	"syscall"
+	osSignal "os/signal"
+
+	"github.com/moby/sys/signal"
 
 	"golang.org/x/term"
 	"google.golang.org/grpc"
@@ -37,6 +38,7 @@ func (c *client) List(ctx context.Context) (*ListReply, error) {
 
 type shellRequestWriter struct {
 	stream grpc.BidiStreamingClient[ShellRequest, ShellReply]
+	closed chan struct{}
 	width  int
 	height int
 }
@@ -50,25 +52,33 @@ func (s *shellRequestWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+func (s *shellRequestWriter) Clean() {
+	close(s.closed)
+}
+
 func NewShellRequestWriter(
 	stream grpc.BidiStreamingClient[ShellRequest, ShellReply],
 	width int, height int, stdOutFd int,
-) (io.Writer, error) {
-	writer := &shellRequestWriter{width: width, height: height, stream: stream}
-
+) (*shellRequestWriter, error) {
+	writer := &shellRequestWriter{width: width, height: height, stream: stream, closed: make(chan struct{}, 1)}
 	go func(writer *shellRequestWriter) {
 		ch := make(chan os.Signal, 1)
-		signal.Notify(ch, syscall.SIGWINCH)
-
-		for range ch {
-			if newWidth, newHeight, err := term.GetSize(stdOutFd); err == nil {
-				writer.width = newWidth
-				writer.height = newHeight
-				_, _ = writer.Write([]byte{})
+		osSignal.Notify(ch, signal.SIGWINCH)
+	loop:
+		for {
+			select {
+			case <-ch:
+				if newWidth, newHeight, err := term.GetSize(stdOutFd); err == nil {
+					writer.width = newWidth
+					writer.height = newHeight
+					_, _ = writer.Write([]byte{})
+				}
+			case <-writer.closed:
+				osSignal.Stop(ch)
+				break loop
 			}
 		}
 	}(writer)
-
 	return writer, nil
 }
 
@@ -106,6 +116,7 @@ func (c *client) Shell(ctx context.Context, nodeName string, instanceName string
 	}(stdInFd, state)
 
 	stdin, err := NewShellRequestWriter(stream, width, height, stdOutFd)
+	defer stdin.Clean()
 	if err != nil {
 		return err
 	}
