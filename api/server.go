@@ -90,6 +90,8 @@ func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
 		err := common.ListenBidiServer(stream, func(req *ShellRequest) error {
 			return agentStream.Send(&agent.ShellRequest{
 				InBuffer: req.GetInBuffer(),
+				Width:    req.GetWidth(),
+				Height:   req.GetHeight(),
 			})
 		})
 		if err != nil {

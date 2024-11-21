@@ -17,6 +17,8 @@ message ListReply {
 
 message ShellRequest {
   bytes in_buffer = 1;
+  int64 width = 2;
+  int64 height = 3;
 }
 
 message ShellReply {

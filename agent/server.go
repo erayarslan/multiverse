@@ -4,10 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"log"
 	"multiverse/common"
 	"multiverse/multipass"
 	"net"
 	"strconv"
+	"sync"
+
+	"github.com/google/uuid"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -28,6 +32,32 @@ type server struct {
 	multipassClient multipass.RpcClient
 	listener        net.Listener
 	grpcServer      *grpc.Server
+	sshMap          map[string]SSH
+	sshMu           sync.RWMutex
+}
+
+func (s *server) GetSSH(uid string) SSH {
+	s.sshMu.Lock()
+	defer s.sshMu.Unlock()
+	return s.sshMap[uid]
+}
+
+func (s *server) addSSH(uid string, ssh SSH) {
+	s.sshMu.Lock()
+	defer s.sshMu.Unlock()
+	s.sshMap[uid] = ssh
+}
+
+func (s *server) removeSSH(uid string) {
+	s.sshMu.Lock()
+	defer s.sshMu.Unlock()
+	if ssh, ok := s.sshMap[uid]; ok {
+		err := ssh.Close()
+		if err != nil {
+			log.Printf("failed to close ssh: %v", err)
+		}
+	}
+	delete(s.sshMap, uid)
 }
 
 func (s *server) Serve() error {
@@ -68,16 +98,48 @@ func (s *server) List(ctx context.Context, _ *ListRequest) (*ListReply, error) {
 	return response, nil
 }
 
+type windowSize struct {
+	sig    chan *windowSize
+	width  int64
+	height int64
+}
+
+func (s *windowSize) setIfChanged(req *ShellRequest) {
+	width := req.GetWidth()
+	height := req.GetHeight()
+	if s.width != width || s.height != height {
+		s.width = width
+		s.height = height
+		s.sig <- s
+	}
+}
+
 type shellRequestReader struct {
-	stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
+	stream     grpc.BidiStreamingServer[ShellRequest, ShellReply]
+	windowSize *windowSize
+}
+
+func NewShellRequestReader(
+	stream grpc.BidiStreamingServer[ShellRequest, ShellReply],
+	height int, width int,
+) *shellRequestReader {
+	return &shellRequestReader{
+		stream: stream,
+		windowSize: &windowSize{
+			width:  int64(width),
+			height: int64(height),
+			sig:    make(chan *windowSize, 1),
+		},
+	}
 }
 
 func (s *shellRequestReader) Read(p []byte) (n int, err error) {
 	in, err := s.stream.Recv()
 	if err != nil {
+		close(s.windowSize.sig)
 		return 0, err
 	}
-
+	s.windowSize.setIfChanged(in)
 	n = copy(p, in.GetInBuffer())
 	return n, nil
 }
@@ -102,19 +164,31 @@ func (s *shellReplyWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]) error {
+func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]) error { // nolint:funlen
+	md, ok := metadata.FromIncomingContext(stream.Context())
+	if !ok {
+		return fmt.Errorf("metadata not found in context")
+	}
+
+	height := md.Get("height")
+	if len(height) == 0 {
+		return fmt.Errorf("height not found in context")
+	}
+	h, _ := strconv.Atoi(height[0])
+
+	width := md.Get("width")
+	if len(width) == 0 {
+		return fmt.Errorf("width not found in context")
+	}
+	w, _ := strconv.Atoi(width[0])
+
 	stdout := &shellReplyWriter{stream: stream}
 	stderr := &shellReplyWriter{stream: stream, isErr: true}
-	stdin := &shellRequestReader{stream: stream}
+	stdin := NewShellRequestReader(stream, h, w)
 
 	sshInfoStream, err := s.multipassClient.SshInfo(context.Background())
 	if err != nil {
 		return err
-	}
-
-	md, ok := metadata.FromIncomingContext(stream.Context())
-	if !ok {
-		return fmt.Errorf("metadata not found in context")
 	}
 
 	instanceName := md.Get("instanceName")
@@ -132,25 +206,18 @@ func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
 		return err
 	}
 
-	height := md.Get("height")
-	if len(height) == 0 {
-		return fmt.Errorf("height not found in context")
-	}
-
-	width := md.Get("width")
-	if len(width) == 0 {
-		return fmt.Errorf("width not found in context")
-	}
-
 	info, ok := res.SshInfo[instanceName[0]]
 	if !ok {
 		return fmt.Errorf("instance not found: %s", instanceName)
 	}
 
-	h, _ := strconv.Atoi(height[0])
-	w, _ := strconv.Atoi(width[0])
-
+	id := uuid.Must(uuid.NewRandom()).String()
+	defer log.Printf("ssh disconnected: %s", id)
+	defer s.removeSSH(id)
 	ssh := NewSSH(info.Host, int(info.Port), info.Username, []byte(info.PrivKeyBase64), stdout, stderr, stdin, h, w)
+	s.addSSH(id, ssh)
+	log.Printf("ssh connected: %s", id)
+	go ssh.InheritSize(stdin.windowSize.sig)
 	if err = ssh.Start(); err != nil {
 		return err
 	}
@@ -186,6 +253,8 @@ func NewServer(target string, addr string, multipassCertFilePath string, multipa
 		multipassClient: multipass.NewRpcClient(conn),
 		listener:        lis,
 		grpcServer:      grpcServer,
+		sshMap:          make(map[string]SSH),
+		sshMu:           sync.RWMutex{},
 	}
 	RegisterRpcServer(grpcServer, server)
 	return server, nil

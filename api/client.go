@@ -7,6 +7,8 @@ import (
 	"log"
 	"multiverse/common"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"golang.org/x/term"
 	"google.golang.org/grpc"
@@ -35,10 +37,12 @@ func (c *client) List(ctx context.Context) (*ListReply, error) {
 
 type shellRequestWriter struct {
 	stream grpc.BidiStreamingClient[ShellRequest, ShellReply]
+	width  int
+	height int
 }
 
 func (s *shellRequestWriter) Write(p []byte) (n int, err error) {
-	err = s.stream.Send(&ShellRequest{InBuffer: p})
+	err = s.stream.Send(&ShellRequest{InBuffer: p, Width: int64(s.width), Height: int64(s.height)})
 	if err != nil {
 		return 0, err
 	}
@@ -46,20 +50,42 @@ func (s *shellRequestWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+func NewShellRequestWriter(
+	stream grpc.BidiStreamingClient[ShellRequest, ShellReply],
+	width int, height int, stdOutFd int,
+) (io.Writer, error) {
+	writer := &shellRequestWriter{width: width, height: height, stream: stream}
+
+	go func(writer *shellRequestWriter) {
+		ch := make(chan os.Signal, 1)
+		signal.Notify(ch, syscall.SIGWINCH)
+
+		for range ch {
+			if newWidth, newHeight, err := term.GetSize(stdOutFd); err == nil {
+				writer.width = newWidth
+				writer.height = newHeight
+				_, _ = writer.Write([]byte{})
+			}
+		}
+	}(writer)
+
+	return writer, nil
+}
+
 func (c *client) Shell(ctx context.Context, nodeName string, instanceName string) error {
 	stdInFd := int(os.Stdin.Fd())
 	stdOutFd := int(os.Stdout.Fd())
 
-	w, h, err := term.GetSize(stdOutFd)
+	width, height, err := term.GetSize(stdOutFd)
 	if err != nil {
-		return err
+		return nil
 	}
 
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(
 		"nodeName", nodeName,
 		"instanceName", instanceName,
-		"width", fmt.Sprintf("%d", w),
-		"height", fmt.Sprintf("%d", h),
+		"width", fmt.Sprintf("%d", width),
+		"height", fmt.Sprintf("%d", height),
 	))
 
 	stream, err := c.client.Shell(ctx)
@@ -79,7 +105,10 @@ func (c *client) Shell(ctx context.Context, nodeName string, instanceName string
 		log.Printf("restored terminal state")
 	}(stdInFd, state)
 
-	stdin := &shellRequestWriter{stream: stream}
+	stdin, err := NewShellRequestWriter(stream, width, height, stdOutFd)
+	if err != nil {
+		return err
+	}
 
 	go func() {
 		var err error

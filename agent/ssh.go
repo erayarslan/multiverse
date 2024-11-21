@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"time"
 
 	goSsh "golang.org/x/crypto/ssh"
 )
@@ -15,6 +17,7 @@ type ssh struct {
 	stdin    io.Reader
 	session  *goSsh.Session
 	client   *goSsh.Client
+	closed   chan struct{}
 	host     string
 	username string
 	pemBytes []byte
@@ -26,16 +29,39 @@ type ssh struct {
 type SSH interface {
 	Start() error
 	Close() error
+	InheritSize(ch chan *windowSize)
+}
+
+func (s *ssh) InheritSize(ch chan *windowSize) {
+loop:
+	for {
+		select {
+		case ws := <-ch:
+			err := s.session.WindowChange(int(ws.height), int(ws.width))
+			if err != nil {
+				log.Printf("failed to resize ssh: %v", err)
+				break loop
+			}
+		case <-s.closed:
+			break loop
+		}
+	}
 }
 
 func (s *ssh) Start() error {
+	defer close(s.closed)
+
 	signer, err := goSsh.ParsePrivateKey(s.pemBytes)
 	if err != nil {
 		return err
 	}
 
 	config := &goSsh.ClientConfig{
-		User: s.username,
+		Config: goSsh.Config{
+			Ciphers: []string{"chacha20-poly1305@openssh.com", "aes256-ctr"},
+		},
+		Timeout: 20 * time.Second,
+		User:    s.username,
 		Auth: []goSsh.AuthMethod{
 			goSsh.PublicKeys(signer),
 		},
@@ -116,5 +142,6 @@ func NewSSH(host string,
 		stdin:    stdin,
 		height:   height,
 		width:    width,
+		closed:   make(chan struct{}, 1),
 	}
 }
