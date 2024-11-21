@@ -44,6 +44,10 @@ func NewConfig() *Config {
 		defaultMultipassAddr = "localhost:50051" // nolint:gosec
 		dir += "/../Local"
 	}
+	if runtime.GOOS == "linux" {
+		dir += "/../snap/multipass/current/data"
+		defaultMultipassAddr = "unix:///var/snap/multipass/common/multipass_socket" // nolint:gosec
+	}
 
 	defaultMultipassCertFilePath := dir + "/multipass-client-certificate/multipass_cert.pem"
 	defaultMultiPassKeyFilePath := dir + "/multipass-client-certificate/multipass_cert_key.pem"

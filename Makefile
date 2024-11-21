@@ -3,14 +3,16 @@
 default: init
 
 PROTOBUF_INSTALL_CMD = brew install protobuf
+LINT_CMD = golangci-lint run -c .golangci.yml --timeout=5m -v
 
 ifeq ($(OS),Windows_NT)
     PROTOBUF_INSTALL_CMD = choco install protoc
+else
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		PROTOBUF_INSTALL_CMD = sudo apt install -y protobuf-compiler
+	endif
 endif
-
-windows:
-	go mod tidy
-	go build -o main.exe cmd/main.go
 
 init:
 	$(PROTOBUF_INSTALL_CMD)
@@ -19,14 +21,16 @@ init:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.35.2
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
 
-proto:
-	protoc --go_out=. --go-grpc_out=. agent/agent.proto api/api.proto cluster/cluster.proto multipass/multipass.proto
+lint:
+	$(LINT_CMD)
 
-
-linter:
+pre-commit:
 	go mod tidy
 	fieldalignment -fix ./...
-	golangci-lint run -c .golangci.yml --timeout=5m -v --fix
+	$(LINT_CMD) --fix
+
+proto:
+	protoc --go_out=. --go-grpc_out=. --experimental_allow_proto3_optional agent/agent.proto api/api.proto cluster/cluster.proto multipass/multipass.proto
 
 build:
 	go build cmd/main.go

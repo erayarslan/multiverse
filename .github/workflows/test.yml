@@ -1,0 +1,50 @@
+name: Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+    types: [ opened, reopened, synchronize ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Multipass
+        run: |
+          sudo snap install multipass --channel latest/stable
+          sudo chmod a+w /var/snap/multipass/common/multipass_socket
+
+      - name: Launch Multipass
+        run: |
+          sleep 30
+          multipass start --timeout 1200
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23'
+
+      - name: Install dependencies and Build
+        run: go mod tidy && make build
+
+      - name: Run
+        run: make test
+
+      - uses: actions/checkout@v3
+      - name: Delete Multipass
+        if: always()
+        run: |
+          multipass delete primary
+          multipass purge
