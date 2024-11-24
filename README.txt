@@ -33,7 +33,7 @@ hostname      127.0.0.1:*****     1337-13-37 13:37:17 UTC
 
 λ multiverse -client -instances
 Node Name     Instance Name     State       IPv4              Image
-hostname      primary           Running     xxx.xxx.xxx.xxx   Ubuntu ??.?? ???
+hostname      primary           Running     xxx.xxx.xxx.xxx   ??.?? ???
 
 ## Architecture
                                                          ┌───────────────────────────────────┐
