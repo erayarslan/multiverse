@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Multiverse is a multi node Multipass cluster management system. It is designed to manage a cluster of Multipass instances.
+Multiverse is a multi node Multipass manager which is designed to create a cluster of Multipass.
 It is aim to provide a simple way to create, start, stop, delete, shell and manage Multipass instances from any machine.
 It is looks like a kubectl but for Multipass.
 
