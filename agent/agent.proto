@@ -9,6 +9,7 @@ service Rpc {
   rpc instances (GetInstancesRequest) returns (GetInstancesReply) {};
   rpc info (GetInfoRequest) returns (GetInfoReply) {};
   rpc shell (stream common.ShellRequest) returns (stream common.ShellReply) {};
+  rpc launch (common.LaunchRequest) returns (common.LaunchReply) {};
 }
 
 message CPU {
@@ -21,9 +22,15 @@ message Memory {
   uint64 available = 2;
 }
 
+message Disk {
+  uint64 total = 1;
+  uint64 available = 2;
+}
+
 message Resource {
   CPU cpu = 1;
   Memory memory = 2;
+  Disk disk = 3;
 }
 
 message GetInfoRequest {

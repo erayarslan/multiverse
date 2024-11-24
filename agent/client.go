@@ -19,6 +19,7 @@ type Client interface {
 	Info(ctx context.Context) (*GetInfoReply, error)
 	Shell(ctx context.Context) (grpc.BidiStreamingClient[common.ShellRequest, common.ShellReply], error)
 	Close() error
+	Launch(ctx context.Context, launchRequest *common.LaunchRequest) (*common.LaunchReply, error)
 }
 
 func (c *client) Close() error {
@@ -31,6 +32,10 @@ func (c *client) Instances(ctx context.Context) (*GetInstancesReply, error) {
 
 func (c *client) Info(ctx context.Context) (*GetInfoReply, error) {
 	return c.client.Info(ctx, &GetInfoRequest{})
+}
+
+func (c *client) Launch(ctx context.Context, launchRequest *common.LaunchRequest) (*common.LaunchReply, error) {
+	return c.client.Launch(ctx, launchRequest)
 }
 
 func (c *client) Shell(ctx context.Context) (grpc.BidiStreamingClient[common.ShellRequest, common.ShellReply], error) {

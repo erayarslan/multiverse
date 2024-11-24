@@ -87,6 +87,14 @@ func (s *server) Instances(_ context.Context, _ *GetInstancesRequest) (*GetInsta
 	}, nil
 }
 
+func (s *server) Launch(_ context.Context, req *common.LaunchRequest) (*common.LaunchReply, error) {
+	if err := s.multipassClient.Launch(context.Background(), req.InstanceName); err != nil {
+		return nil, err
+	}
+
+	return &common.LaunchReply{}, nil
+}
+
 func (s *server) Info(_ context.Context, _ *GetInfoRequest) (*GetInfoReply, error) {
 	resource := s.state.GetState().Resource
 

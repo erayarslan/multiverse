@@ -16,11 +16,13 @@ type Config struct {
 	MultipassCertFilePath string
 	MasterAddr            string
 	ShellInstanceName     string
+	LaunchInstanceName    string
 	IsClient              bool
 	IsWorker              bool
 	Shell                 bool
 	Instances             bool
 	Nodes                 bool
+	Launch                bool
 	IsMaster              bool
 }
 
@@ -64,7 +66,9 @@ func NewConfig() *Config {
 	flag.BoolVar(&cfg.Instances, "instances", false, "list instances")
 	flag.BoolVar(&cfg.Nodes, "nodes", false, "list nodes")
 	flag.BoolVar(&cfg.Shell, "shell", false, "run as shell")
+	flag.BoolVar(&cfg.Launch, "launch", false, "launch instance")
 	flag.StringVar(&cfg.ShellInstanceName, "shell-instance-name", "", "shell instance name")
+	flag.StringVar(&cfg.LaunchInstanceName, "launch-instance-name", "", "launch instance name")
 
 	flag.Parse()
 

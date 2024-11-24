@@ -8,6 +8,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/erayarslan/multiverse/common"
+
 	"github.com/erayarslan/multiverse/api"
 	"github.com/erayarslan/multiverse/config"
 )
@@ -52,8 +54,8 @@ func (c *client) nodes() {
 
 	w := tabwriter.NewWriter(os.Stdout, 10, 1, 5, ' ', 0)
 
-	fs := "%s\t%s\t%s\t%s\t%s\n"
-	_, err = fmt.Fprintf(w, fs, "Node Name", "IPv4", "Cpu", "Mem", "Last Sync")
+	fs := "%s\t%s\t%s\t%s\t%s\t%s\n"
+	_, err = fmt.Fprintf(w, fs, "Node Name", "IPv4", "Cpu", "Mem", "Disk", "Last Sync")
 	if err != nil {
 		return
 	}
@@ -63,6 +65,7 @@ func (c *client) nodes() {
 			strings.Join(n.Ipv4, "\n"),
 			fmt.Sprintf("%d", n.Resource.Cpu.Available),
 			fmt.Sprintf("%vMb", n.Resource.Memory.Available/1024/1024),
+			fmt.Sprintf("%vGb", n.Resource.Disk.Available/1024/1024/1024),
 			n.LastSync.AsTime().Format("2006-01-02 15:04:05 MST"),
 		)
 		if err != nil {
@@ -83,6 +86,15 @@ func (c *client) shell() {
 	}
 }
 
+func (c *client) launch() {
+	_, err := c.apiClient.Launch(context.Background(), &common.LaunchRequest{InstanceName: c.cfg.LaunchInstanceName})
+	if err != nil {
+		log.Fatalf("error while launch: %v", err)
+	}
+
+	log.Printf("instance %s launched", c.cfg.LaunchInstanceName)
+}
+
 func (c *client) Execute() error {
 	log.Printf("api server addr: %s", c.cfg.APIServerAddr)
 
@@ -99,6 +111,8 @@ func (c *client) Execute() error {
 		c.nodes()
 	case c.cfg.Shell:
 		c.shell()
+	case c.cfg.Launch:
+		c.launch()
 	}
 
 	c.doneCh <- struct{}{}

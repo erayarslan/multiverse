@@ -11,6 +11,7 @@ service Rpc {
   rpc instances (GetInstancesRequest) returns (GetInstancesReply) {};
   rpc nodes (GetNodesRequest) returns (GetNodesReply) {};
   rpc shell (stream common.ShellRequest) returns (stream common.ShellReply) {};
+  rpc launch (common.LaunchRequest) returns (common.LaunchReply) {};
 }
 
 message Node {

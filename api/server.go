@@ -69,6 +69,19 @@ func (s *server) Nodes(_ context.Context, _ *GetNodesRequest) (*GetNodesReply, e
 	return getNodesReply, nil
 }
 
+func (s *server) Launch(ctx context.Context, req *common.LaunchRequest) (*common.LaunchReply, error) {
+	// todo: detect best worker due to resource
+	var agentClient agent.Client
+	s.clusterServer.IterateWorkers(func(workerInfo *cluster.WorkerInfo) bool {
+		agentClient = workerInfo.AgentClient
+		return false
+	})
+	if agentClient == nil {
+		return nil, fmt.Errorf("agent client not found")
+	}
+	return agentClient.Launch(ctx, req)
+}
+
 func (s *server) Shell(stream grpc.BidiStreamingServer[common.ShellRequest, common.ShellReply]) error {
 	md, ok := metadata.FromIncomingContext(stream.Context())
 	if !ok {

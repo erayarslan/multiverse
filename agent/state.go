@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/shirou/gopsutil/v4/disk"
+
 	"github.com/erayarslan/multiverse/multipass"
 	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/shirou/gopsutil/v4/mem"
@@ -57,6 +59,7 @@ func (s *state) updateResources() {
 		log.Printf("error while getting virtual memory: %v", err)
 		return
 	}
+
 	cpuInfoStats, err := cpu.Info()
 	if err != nil {
 		log.Printf("error while getting cpu info: %v", err)
@@ -67,9 +70,26 @@ func (s *state) updateResources() {
 		log.Printf("error while getting cpu percent: %v", err)
 		return
 	}
-
 	totalCore := cpuInfoStats[0].Cores
 	availableCore := totalCore - int32(math.Ceil(float64(totalCore)*percents[0]/100))
+
+	partitions, err := disk.Partitions(true)
+	if err != nil {
+		log.Printf("error while getting disk partitions: %v", err)
+		return
+	}
+
+	var diskUsageTotal uint64
+	var diskUsageFree uint64
+	for _, partition := range partitions {
+		diskUsageStat, err := disk.Usage(partition.Mountpoint)
+		if err != nil {
+			log.Printf("error while getting disk usage: %v", err)
+			return
+		}
+		diskUsageTotal += diskUsageStat.Total
+		diskUsageFree += diskUsageStat.Free
+	}
 
 	s.Resource = &Resource{
 		Cpu: &CPU{
@@ -79,6 +99,10 @@ func (s *state) updateResources() {
 		Memory: &Memory{
 			Total:     virtualMemoryStat.Total,
 			Available: virtualMemoryStat.Available,
+		},
+		Disk: &Disk{
+			Total:     diskUsageTotal,
+			Available: diskUsageFree,
 		},
 	}
 }

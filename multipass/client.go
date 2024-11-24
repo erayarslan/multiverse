@@ -25,6 +25,7 @@ type instance struct {
 type Client interface {
 	List(ctx context.Context) ([]*instance, error)
 	SSHInfo(ctx context.Context, instanceName string) (*SSHInfo, error)
+	Launch(ctx context.Context, instanceName string) error
 }
 
 func (s InstanceStatus_Status) ToString() string {
@@ -50,6 +51,22 @@ func (s InstanceStatus_Status) ToString() string {
 	default:
 		return "Unknown"
 	}
+}
+
+func (c *client) Launch(ctx context.Context, instanceName string) error {
+	stream, err := c.rpcClient.Launch(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = common.ExecuteOnceWithBidiClient(stream, &LaunchRequest{
+		InstanceName: instanceName,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *client) List(ctx context.Context) ([]*instance, error) {

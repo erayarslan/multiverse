@@ -23,6 +23,7 @@ const (
 	Rpc_Instances_FullMethodName = "/api.Rpc/instances"
 	Rpc_Nodes_FullMethodName     = "/api.Rpc/nodes"
 	Rpc_Shell_FullMethodName     = "/api.Rpc/shell"
+	Rpc_Launch_FullMethodName    = "/api.Rpc/launch"
 )
 
 // RpcClient is the client API for Rpc service.
@@ -32,6 +33,7 @@ type RpcClient interface {
 	Instances(ctx context.Context, in *GetInstancesRequest, opts ...grpc.CallOption) (*GetInstancesReply, error)
 	Nodes(ctx context.Context, in *GetNodesRequest, opts ...grpc.CallOption) (*GetNodesReply, error)
 	Shell(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[common.ShellRequest, common.ShellReply], error)
+	Launch(ctx context.Context, in *common.LaunchRequest, opts ...grpc.CallOption) (*common.LaunchReply, error)
 }
 
 type rpcClient struct {
@@ -75,6 +77,16 @@ func (c *rpcClient) Shell(ctx context.Context, opts ...grpc.CallOption) (grpc.Bi
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Rpc_ShellClient = grpc.BidiStreamingClient[common.ShellRequest, common.ShellReply]
 
+func (c *rpcClient) Launch(ctx context.Context, in *common.LaunchRequest, opts ...grpc.CallOption) (*common.LaunchReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(common.LaunchReply)
+	err := c.cc.Invoke(ctx, Rpc_Launch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RpcServer is the server API for Rpc service.
 // All implementations must embed UnimplementedRpcServer
 // for forward compatibility.
@@ -82,6 +94,7 @@ type RpcServer interface {
 	Instances(context.Context, *GetInstancesRequest) (*GetInstancesReply, error)
 	Nodes(context.Context, *GetNodesRequest) (*GetNodesReply, error)
 	Shell(grpc.BidiStreamingServer[common.ShellRequest, common.ShellReply]) error
+	Launch(context.Context, *common.LaunchRequest) (*common.LaunchReply, error)
 	mustEmbedUnimplementedRpcServer()
 }
 
@@ -100,6 +113,9 @@ func (UnimplementedRpcServer) Nodes(context.Context, *GetNodesRequest) (*GetNode
 }
 func (UnimplementedRpcServer) Shell(grpc.BidiStreamingServer[common.ShellRequest, common.ShellReply]) error {
 	return status.Errorf(codes.Unimplemented, "method Shell not implemented")
+}
+func (UnimplementedRpcServer) Launch(context.Context, *common.LaunchRequest) (*common.LaunchReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Launch not implemented")
 }
 func (UnimplementedRpcServer) mustEmbedUnimplementedRpcServer() {}
 func (UnimplementedRpcServer) testEmbeddedByValue()             {}
@@ -165,6 +181,24 @@ func _Rpc_Shell_Handler(srv interface{}, stream grpc.ServerStream) error {
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Rpc_ShellServer = grpc.BidiStreamingServer[common.ShellRequest, common.ShellReply]
 
+func _Rpc_Launch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(common.LaunchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RpcServer).Launch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Rpc_Launch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RpcServer).Launch(ctx, req.(*common.LaunchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Rpc_ServiceDesc is the grpc.ServiceDesc for Rpc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -179,6 +213,10 @@ var Rpc_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "nodes",
 			Handler:    _Rpc_Nodes_Handler,
+		},
+		{
+			MethodName: "launch",
+			Handler:    _Rpc_Launch_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
