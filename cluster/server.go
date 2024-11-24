@@ -3,12 +3,13 @@ package cluster
 import (
 	"fmt"
 	"log"
-	"multiverse/agent"
-	"multiverse/common"
 	"net"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/erayarslan/multiverse/agent"
+	"github.com/erayarslan/multiverse/common"
 
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -37,14 +38,18 @@ type server struct {
 }
 
 type Server interface {
-	GetWorkerInfoMap() map[string]*WorkerInfo
+	IterateWorkers(callback func(info *WorkerInfo) bool)
 	Serve() error
 }
 
-func (s *server) GetWorkerInfoMap() map[string]*WorkerInfo {
+func (s *server) IterateWorkers(callback func(info *WorkerInfo) bool) {
 	s.workersMu.Lock()
 	defer s.workersMu.Unlock()
-	return s.workerInfoMap
+	for _, workerInfo := range s.workerInfoMap {
+		if workerInfo.State == nil || !callback(workerInfo) {
+			break
+		}
+	}
 }
 
 func (s *server) addWorkerInfo(uid string, workerInfo *WorkerInfo) {
@@ -126,11 +131,8 @@ func (s *server) Sync(stream grpc.BidiStreamingServer[SyncRequest, SyncReply]) e
 		Stream:      stream,
 		NodeName:    nodeName[0],
 		UUID:        id,
-		State: &State{
-			Instances: make([]*Instance, 0),
-		},
-		IPPort:   target,
-		LastSync: timestamppb.Now(),
+		IPPort:      target,
+		LastSync:    timestamppb.Now(),
 	})
 
 	log.Printf("joined node name: %s, uuid: %s", nodeName[0], id)

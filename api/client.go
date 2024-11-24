@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"multiverse/common"
 	"os"
 	osSignal "os/signal"
+
+	"github.com/erayarslan/multiverse/common"
 
 	"github.com/moby/sys/signal"
 
@@ -42,14 +43,14 @@ func (c *client) Nodes(ctx context.Context) (*GetNodesReply, error) {
 }
 
 type shellRequestWriter struct {
-	stream grpc.BidiStreamingClient[ShellRequest, ShellReply]
+	stream grpc.BidiStreamingClient[common.ShellRequest, common.ShellReply]
 	closed chan struct{}
 	width  int
 	height int
 }
 
 func (s *shellRequestWriter) Write(p []byte) (n int, err error) {
-	err = s.stream.Send(&ShellRequest{InBuffer: p, Width: int64(s.width), Height: int64(s.height)})
+	err = s.stream.Send(&common.ShellRequest{InBuffer: p, Width: int64(s.width), Height: int64(s.height)})
 	if err != nil {
 		return 0, err
 	}
@@ -62,7 +63,7 @@ func (s *shellRequestWriter) Clean() {
 }
 
 func NewShellRequestWriter(
-	stream grpc.BidiStreamingClient[ShellRequest, ShellReply],
+	stream grpc.BidiStreamingClient[common.ShellRequest, common.ShellReply],
 	width int, height int, stdOutFd int,
 ) (*shellRequestWriter, error) {
 	writer := &shellRequestWriter{width: width, height: height, stream: stream, closed: make(chan struct{}, 1)}
@@ -132,7 +133,7 @@ func (c *client) Shell(ctx context.Context, instanceName string) error {
 		}
 	}()
 
-	return common.ListenBidiClient(stream, func(res *ShellReply) error {
+	return common.ListenBidiClient(stream, func(res *common.ShellReply) error {
 		var err error
 		if _, err = os.Stdout.Write(res.GetOutBuffer()); err != nil {
 			return err

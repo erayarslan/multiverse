@@ -1,0 +1,15 @@
+syntax = "proto3";
+package common;
+
+option go_package = "github.com/erayarslan/multiverse/common";
+
+message ShellRequest {
+  bytes in_buffer = 1;
+  int64 width = 2;
+  int64 height = 3;
+}
+
+message ShellReply {
+  bytes out_buffer = 1;
+  bytes err_buffer = 2;
+}

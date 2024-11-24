@@ -2,11 +2,12 @@ package main
 
 import (
 	"log"
-	"multiverse/config"
-	"multiverse/role"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/erayarslan/multiverse/config"
+	"github.com/erayarslan/multiverse/role"
 )
 
 func main() {

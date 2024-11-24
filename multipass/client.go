@@ -4,7 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"multiverse/common"
+
+	"github.com/erayarslan/multiverse/common"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

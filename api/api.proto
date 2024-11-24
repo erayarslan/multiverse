@@ -1,17 +1,23 @@
 syntax = "proto3";
 package api;
 
-option go_package = "./api";
+option go_package = "github.com/erayarslan/multiverse/api";
 
 import "google/protobuf/timestamp.proto";
+import "common/common.proto";
+import "agent/agent.proto";
 
 service Rpc {
   rpc instances (GetInstancesRequest) returns (GetInstancesReply) {};
   rpc nodes (GetNodesRequest) returns (GetNodesReply) {};
-  rpc shell (stream ShellRequest) returns (stream ShellReply) {};
+  rpc shell (stream common.ShellRequest) returns (stream common.ShellReply) {};
 }
 
-message GetInstancesRequest {
+message Node {
+  string name = 1;
+  google.protobuf.Timestamp last_sync = 2;
+  repeated string ipv4 = 3;
+  agent.Resource resource = 4;
 }
 
 message GetNodesRequest {
@@ -23,29 +29,12 @@ message GetNodesReply {
 
 message Instance {
   string node_name = 1;
-  string instance_name = 2;
-  string state = 3;
-  repeated string ipv4 = 4;
-  string image = 5;
+  agent.Instance instance = 2;
 }
 
-message Node {
-  string name = 1;
-  google.protobuf.Timestamp last_sync = 2;
-  repeated string ipv4 = 3;
+message GetInstancesRequest {
 }
 
 message GetInstancesReply {
   repeated Instance instances = 1;
-}
-
-message ShellRequest {
-  bytes in_buffer = 1;
-  int64 width = 2;
-  int64 height = 3;
-}
-
-message ShellReply {
-  bytes out_buffer = 1;
-  bytes err_buffer = 2;
 }

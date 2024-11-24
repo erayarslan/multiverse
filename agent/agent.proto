@@ -1,11 +1,36 @@
 syntax = "proto3";
 package agent;
 
-option go_package = "./agent";
+option go_package = "github.com/erayarslan/multiverse/agent";
+
+import "common/common.proto";
 
 service Rpc {
-  rpc list (ListRequest) returns (ListReply) {};
-  rpc shell (stream ShellRequest) returns (stream ShellReply) {};
+  rpc instances (GetInstancesRequest) returns (GetInstancesReply) {};
+  rpc info (GetInfoRequest) returns (GetInfoReply) {};
+  rpc shell (stream common.ShellRequest) returns (stream common.ShellReply) {};
+}
+
+message CPU {
+  int32 total = 1;
+  int32 available = 2;
+}
+
+message Memory {
+  uint64 total = 1;
+  uint64 available = 2;
+}
+
+message Resource {
+  CPU cpu = 1;
+  Memory memory = 2;
+}
+
+message GetInfoRequest {
+}
+
+message GetInfoReply {
+  Resource resource = 1;
 }
 
 message Instance {
@@ -15,20 +40,9 @@ message Instance {
   string image = 4;
 }
 
-message ListRequest {
+message GetInstancesRequest {
 }
 
-message ListReply {
+message GetInstancesReply {
   repeated Instance instances = 1;
-}
-
-message ShellRequest {
-  bytes in_buffer = 1;
-  int64 width = 2;
-  int64 height = 3;
-}
-
-message ShellReply {
-  bytes out_buffer = 1;
-  bytes err_buffer = 2;
 }

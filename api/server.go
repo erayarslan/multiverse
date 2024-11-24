@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"multiverse/agent"
-	"multiverse/cluster"
-	"multiverse/common"
 	"net"
+
+	"github.com/erayarslan/multiverse/agent"
+	"github.com/erayarslan/multiverse/cluster"
+	"github.com/erayarslan/multiverse/common"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -36,17 +37,16 @@ func (s *server) Instances(_ context.Context, _ *GetInstancesRequest) (*GetInsta
 	getInstancesReply := &GetInstancesReply{
 		Instances: make([]*Instance, 0),
 	}
-	for _, workerInfo := range s.clusterServer.GetWorkerInfoMap() {
+
+	s.clusterServer.IterateWorkers(func(workerInfo *cluster.WorkerInfo) bool {
 		for _, instance := range workerInfo.State.Instances {
 			getInstancesReply.Instances = append(getInstancesReply.Instances, &Instance{
-				NodeName:     workerInfo.NodeName,
-				InstanceName: instance.Name,
-				State:        instance.State,
-				Ipv4:         instance.Ipv4,
-				Image:        instance.Image,
+				NodeName: workerInfo.NodeName,
+				Instance: instance,
 			})
 		}
-	}
+		return true
+	})
 
 	return getInstancesReply, nil
 }
@@ -55,18 +55,21 @@ func (s *server) Nodes(_ context.Context, _ *GetNodesRequest) (*GetNodesReply, e
 	getNodesReply := &GetNodesReply{
 		Nodes: make([]*Node, 0),
 	}
-	for _, workerInfo := range s.clusterServer.GetWorkerInfoMap() {
+
+	s.clusterServer.IterateWorkers(func(workerInfo *cluster.WorkerInfo) bool {
 		getNodesReply.Nodes = append(getNodesReply.Nodes, &Node{
 			Name:     workerInfo.NodeName,
 			LastSync: workerInfo.LastSync,
 			Ipv4:     []string{workerInfo.IPPort},
+			Resource: workerInfo.State.Resource,
 		})
-	}
+		return true
+	})
 
 	return getNodesReply, nil
 }
 
-func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]) error {
+func (s *server) Shell(stream grpc.BidiStreamingServer[common.ShellRequest, common.ShellReply]) error {
 	md, ok := metadata.FromIncomingContext(stream.Context())
 	if !ok {
 		return fmt.Errorf("metadata not found in context")
@@ -78,14 +81,15 @@ func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
 	}
 
 	var agentClient agent.Client
-	for _, workerInfo := range s.clusterServer.GetWorkerInfoMap() {
+	s.clusterServer.IterateWorkers(func(workerInfo *cluster.WorkerInfo) bool {
 		for _, instance := range workerInfo.State.Instances {
 			if instance.Name == instanceName[0] {
 				agentClient = workerInfo.AgentClient
-				break
+				return false
 			}
 		}
-	}
+		return true
+	})
 	if agentClient == nil {
 		return fmt.Errorf("agent client not found with instance name: %s", instanceName[0])
 	}
@@ -97,8 +101,8 @@ func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
 	}
 
 	go func() {
-		err := common.ListenBidiServer(stream, func(req *ShellRequest) error {
-			return agentStream.Send(&agent.ShellRequest{
+		err := common.ListenBidiServer(stream, func(req *common.ShellRequest) error {
+			return agentStream.Send(&common.ShellRequest{
 				InBuffer: req.GetInBuffer(),
 				Width:    req.GetWidth(),
 				Height:   req.GetHeight(),
@@ -113,8 +117,8 @@ func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
 		}
 	}()
 
-	return common.ListenBidiClient(agentStream, func(res *agent.ShellReply) error {
-		return stream.Send(&ShellReply{
+	return common.ListenBidiClient(agentStream, func(res *common.ShellReply) error {
+		return stream.Send(&common.ShellReply{
 			OutBuffer: res.GetOutBuffer(),
 			ErrBuffer: res.GetErrBuffer(),
 		})

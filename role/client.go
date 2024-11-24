@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"multiverse/api"
-	"multiverse/config"
 	"os"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/erayarslan/multiverse/api"
+	"github.com/erayarslan/multiverse/config"
 )
 
 type client struct {
@@ -31,7 +32,7 @@ func (c *client) instances() {
 		return
 	}
 	for _, n := range getInstancesReply.Instances {
-		_, err = fmt.Fprintf(w, fs, n.NodeName, n.InstanceName, n.State, strings.Join(n.Ipv4, "\n"), n.Image)
+		_, err = fmt.Fprintf(w, fs, n.NodeName, n.Instance.Name, n.Instance.State, strings.Join(n.Instance.Ipv4, "\n"), n.Instance.Image)
 		if err != nil {
 			return
 		}
@@ -51,13 +52,19 @@ func (c *client) nodes() {
 
 	w := tabwriter.NewWriter(os.Stdout, 10, 1, 5, ' ', 0)
 
-	fs := "%s\t%s\t%s\n"
-	_, err = fmt.Fprintf(w, fs, "Node Name", "IPv4", "Last Sync")
+	fs := "%s\t%s\t%s\t%s\t%s\n"
+	_, err = fmt.Fprintf(w, fs, "Node Name", "IPv4", "Cpu", "Mem", "Last Sync")
 	if err != nil {
 		return
 	}
 	for _, n := range getNodesReply.Nodes {
-		_, err = fmt.Fprintf(w, fs, n.Name, strings.Join(n.Ipv4, "\n"), n.LastSync.AsTime().Format("2006-01-02 15:04:05 MST"))
+		_, err = fmt.Fprintf(w, fs,
+			n.Name,
+			strings.Join(n.Ipv4, "\n"),
+			fmt.Sprintf("%d", n.Resource.Cpu.Available),
+			fmt.Sprintf("%vMb", n.Resource.Memory.Available/1024/1024),
+			n.LastSync.AsTime().Format("2006-01-02 15:04:05 MST"),
+		)
 		if err != nil {
 			return
 		}

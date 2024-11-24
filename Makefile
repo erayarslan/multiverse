@@ -4,6 +4,7 @@ default: init
 
 PROTOBUF_INSTALL_CMD = brew install protobuf
 LINT_CMD = golangci-lint run -c .golangci.yml --timeout=5m -v
+PROTOC_BASE_CMD = protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative --experimental_allow_proto3_optional
 
 ifeq ($(OS),Windows_NT)
     PROTOBUF_INSTALL_CMD = choco install protoc
@@ -31,10 +32,7 @@ pre-commit:
 	make proto
 
 proto:
-	protoc --go_out=. --go-grpc_out=. --experimental_allow_proto3_optional agent/agent.proto
-	protoc --go_out=. --go-grpc_out=. --experimental_allow_proto3_optional api/api.proto
-	protoc --go_out=. --go-grpc_out=. --experimental_allow_proto3_optional cluster/cluster.proto
-	protoc --go_out=. --go-grpc_out=. --experimental_allow_proto3_optional multipass/multipass.proto
+	$(PROTOC_BASE_CMD) common/common.proto agent/agent.proto api/api.proto cluster/cluster.proto multipass/multipass.proto
 
 build:
 	go build cmd/main.go

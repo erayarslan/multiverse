@@ -1,21 +1,17 @@
 syntax = "proto3";
 package cluster;
 
-option go_package = "./cluster";
+option go_package = "github.com/erayarslan/multiverse/cluster";
+
+import "agent/agent.proto";
 
 service Rpc {
   rpc sync (stream SyncRequest) returns (stream SyncReply) {};
 }
 
-message Instance {
-  string name = 1;
-  string state = 2;
-  repeated string ipv4 = 3;
-  string image = 4;
-}
-
 message State {
-  repeated Instance instances = 1;
+  agent.Resource resource = 1;
+  repeated agent.Instance instances = 2;
 }
 
 message SyncRequest {

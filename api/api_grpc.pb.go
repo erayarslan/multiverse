@@ -8,6 +8,7 @@ package api
 
 import (
 	context "context"
+	common "github.com/erayarslan/multiverse/common"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -30,7 +31,7 @@ const (
 type RpcClient interface {
 	Instances(ctx context.Context, in *GetInstancesRequest, opts ...grpc.CallOption) (*GetInstancesReply, error)
 	Nodes(ctx context.Context, in *GetNodesRequest, opts ...grpc.CallOption) (*GetNodesReply, error)
-	Shell(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ShellRequest, ShellReply], error)
+	Shell(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[common.ShellRequest, common.ShellReply], error)
 }
 
 type rpcClient struct {
@@ -61,18 +62,18 @@ func (c *rpcClient) Nodes(ctx context.Context, in *GetNodesRequest, opts ...grpc
 	return out, nil
 }
 
-func (c *rpcClient) Shell(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ShellRequest, ShellReply], error) {
+func (c *rpcClient) Shell(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[common.ShellRequest, common.ShellReply], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &Rpc_ServiceDesc.Streams[0], Rpc_Shell_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[ShellRequest, ShellReply]{ClientStream: stream}
+	x := &grpc.GenericClientStream[common.ShellRequest, common.ShellReply]{ClientStream: stream}
 	return x, nil
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Rpc_ShellClient = grpc.BidiStreamingClient[ShellRequest, ShellReply]
+type Rpc_ShellClient = grpc.BidiStreamingClient[common.ShellRequest, common.ShellReply]
 
 // RpcServer is the server API for Rpc service.
 // All implementations must embed UnimplementedRpcServer
@@ -80,7 +81,7 @@ type Rpc_ShellClient = grpc.BidiStreamingClient[ShellRequest, ShellReply]
 type RpcServer interface {
 	Instances(context.Context, *GetInstancesRequest) (*GetInstancesReply, error)
 	Nodes(context.Context, *GetNodesRequest) (*GetNodesReply, error)
-	Shell(grpc.BidiStreamingServer[ShellRequest, ShellReply]) error
+	Shell(grpc.BidiStreamingServer[common.ShellRequest, common.ShellReply]) error
 	mustEmbedUnimplementedRpcServer()
 }
 
@@ -97,7 +98,7 @@ func (UnimplementedRpcServer) Instances(context.Context, *GetInstancesRequest) (
 func (UnimplementedRpcServer) Nodes(context.Context, *GetNodesRequest) (*GetNodesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Nodes not implemented")
 }
-func (UnimplementedRpcServer) Shell(grpc.BidiStreamingServer[ShellRequest, ShellReply]) error {
+func (UnimplementedRpcServer) Shell(grpc.BidiStreamingServer[common.ShellRequest, common.ShellReply]) error {
 	return status.Errorf(codes.Unimplemented, "method Shell not implemented")
 }
 func (UnimplementedRpcServer) mustEmbedUnimplementedRpcServer() {}
@@ -158,11 +159,11 @@ func _Rpc_Nodes_Handler(srv interface{}, ctx context.Context, dec func(interface
 }
 
 func _Rpc_Shell_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(RpcServer).Shell(&grpc.GenericServerStream[ShellRequest, ShellReply]{ServerStream: stream})
+	return srv.(RpcServer).Shell(&grpc.GenericServerStream[common.ShellRequest, common.ShellReply]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Rpc_ShellServer = grpc.BidiStreamingServer[ShellRequest, ShellReply]
+type Rpc_ShellServer = grpc.BidiStreamingServer[common.ShellRequest, common.ShellReply]
 
 // Rpc_ServiceDesc is the grpc.ServiceDesc for Rpc service.
 // It's only intended for direct use with grpc.RegisterService,

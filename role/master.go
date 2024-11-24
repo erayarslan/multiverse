@@ -2,9 +2,10 @@ package role
 
 import (
 	"log"
-	"multiverse/api"
-	"multiverse/cluster"
-	"multiverse/config"
+
+	"github.com/erayarslan/multiverse/api"
+	"github.com/erayarslan/multiverse/cluster"
+	"github.com/erayarslan/multiverse/config"
 )
 
 type master struct {

@@ -2,10 +2,11 @@ package role
 
 import (
 	"log"
-	"multiverse/agent"
-	"multiverse/cluster"
-	"multiverse/config"
-	"multiverse/multipass"
+
+	"github.com/erayarslan/multiverse/agent"
+	"github.com/erayarslan/multiverse/cluster"
+	"github.com/erayarslan/multiverse/config"
+	"github.com/erayarslan/multiverse/multipass"
 )
 
 type worker struct {
@@ -28,7 +29,7 @@ func (c *worker) Execute() error {
 	state := agent.NewState(multipassClient)
 	go state.Run()
 
-	server, err := agent.NewServer(c.cfg.MultipassProxyBind, multipassClient)
+	server, err := agent.NewServer(c.cfg.MultipassProxyBind, multipassClient, state)
 	if err != nil {
 		log.Fatalf("error while creating multipass proxy: %v", err)
 	}

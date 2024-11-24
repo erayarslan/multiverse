@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"multiverse/multipass"
 	"net"
 	"strconv"
 	"sync"
+
+	"github.com/erayarslan/multiverse/common"
+
+	"github.com/erayarslan/multiverse/multipass"
 
 	"github.com/google/uuid"
 
@@ -28,6 +31,7 @@ type server struct {
 	UnimplementedRpcServer
 	multipassClient multipass.Client
 	listener        net.Listener
+	state           State
 	grpcServer      *grpc.Server
 	sshMap          map[string]SSH
 	sshMu           sync.RWMutex
@@ -65,11 +69,8 @@ func (s *server) Port() int {
 	return s.listener.Addr().(*net.TCPAddr).Port
 }
 
-func (s *server) List(ctx context.Context, _ *ListRequest) (*ListReply, error) {
-	multipassInstances, err := s.multipassClient.List(ctx)
-	if err != nil {
-		return nil, err
-	}
+func (s *server) Instances(_ context.Context, _ *GetInstancesRequest) (*GetInstancesReply, error) {
+	multipassInstances := s.state.GetState().Instances
 
 	instances := make([]*Instance, len(multipassInstances))
 	for i, multipassInstance := range multipassInstances {
@@ -81,8 +82,16 @@ func (s *server) List(ctx context.Context, _ *ListRequest) (*ListReply, error) {
 		}
 	}
 
-	return &ListReply{
+	return &GetInstancesReply{
 		Instances: instances,
+	}, nil
+}
+
+func (s *server) Info(_ context.Context, _ *GetInfoRequest) (*GetInfoReply, error) {
+	resource := s.state.GetState().Resource
+
+	return &GetInfoReply{
+		Resource: resource,
 	}, nil
 }
 
@@ -92,7 +101,7 @@ type windowSize struct {
 	height int64
 }
 
-func (s *windowSize) setIfChanged(req *ShellRequest) {
+func (s *windowSize) setIfChanged(req *common.ShellRequest) {
 	width := req.GetWidth()
 	height := req.GetHeight()
 	if s.width != width || s.height != height {
@@ -103,12 +112,12 @@ func (s *windowSize) setIfChanged(req *ShellRequest) {
 }
 
 type shellRequestReader struct {
-	stream     grpc.BidiStreamingServer[ShellRequest, ShellReply]
+	stream     grpc.BidiStreamingServer[common.ShellRequest, common.ShellReply]
 	windowSize *windowSize
 }
 
 func NewShellRequestReader(
-	stream grpc.BidiStreamingServer[ShellRequest, ShellReply],
+	stream grpc.BidiStreamingServer[common.ShellRequest, common.ShellReply],
 	height int, width int,
 ) *shellRequestReader {
 	return &shellRequestReader{
@@ -133,12 +142,12 @@ func (s *shellRequestReader) Read(p []byte) (n int, err error) {
 }
 
 type shellReplyWriter struct {
-	stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
+	stream grpc.BidiStreamingServer[common.ShellRequest, common.ShellReply]
 	isErr  bool
 }
 
 func (s *shellReplyWriter) Write(p []byte) (n int, err error) {
-	reply := &ShellReply{}
+	reply := &common.ShellReply{}
 	if s.isErr {
 		reply.ErrBuffer = p
 	} else {
@@ -152,7 +161,7 @@ func (s *shellReplyWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]) error { // nolint:funlen
+func (s *server) Shell(stream grpc.BidiStreamingServer[common.ShellRequest, common.ShellReply]) error { // nolint:funlen
 	md, ok := metadata.FromIncomingContext(stream.Context())
 	if !ok {
 		return fmt.Errorf("metadata not found in context")
@@ -198,7 +207,7 @@ func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
 	return nil
 }
 
-func NewServer(addr string, multipassClient multipass.Client) (Server, error) {
+func NewServer(addr string, multipassClient multipass.Client, state State) (Server, error) {
 	lis, err := net.Listen("tcp", fmt.Sprintf("%s:0", addr))
 	if err != nil {
 		return nil, err
@@ -212,6 +221,7 @@ func NewServer(addr string, multipassClient multipass.Client) (Server, error) {
 		grpcServer:      grpcServer,
 		sshMap:          make(map[string]SSH),
 		sshMu:           sync.RWMutex{},
+		state:           state,
 	}
 	RegisterRpcServer(grpcServer, server)
 	return server, nil

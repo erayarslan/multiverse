@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"multiverse/agent"
-	"multiverse/common"
-	"multiverse/multipass"
 	"strconv"
 	"time"
+
+	"github.com/erayarslan/multiverse/agent"
+	"github.com/erayarslan/multiverse/common"
+	"github.com/erayarslan/multiverse/multipass"
 
 	"google.golang.org/grpc/metadata"
 
@@ -98,23 +99,14 @@ func (c *client) stateSync() {
 			continue
 		}
 
-		clusterInstances := make([]*Instance, 0, len(state.Instances))
-		for _, instance := range state.Instances {
-			clusterInstances = append(clusterInstances, &Instance{
-				Name:  instance.Name,
-				State: instance.State,
-				Ipv4:  instance.Ipv4,
-				Image: instance.Image,
-			})
-		}
-
 		if c.stream == nil {
 			continue
 		}
 
 		if err := c.stream.Send(&SyncRequest{
 			State: &State{
-				Instances: clusterInstances,
+				Instances: state.Instances,
+				Resource:  state.Resource,
 			},
 		}); err != nil {
 			log.Printf("error while sending state: %v", err)
