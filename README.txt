@@ -8,9 +8,7 @@ It is looks like a kubectl but for Multipass.
 
 ## Test
 
- > make init
- > make build
- > make test
+λ go run cmd/main.go --help
 
 ## Example Usage
 

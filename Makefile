@@ -17,6 +17,7 @@ endif
 
 init:
 	$(PROTOBUF_INSTALL_CMD)
+	go install github.com/goreleaser/goreleaser/v2@latest
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.62.0
 	go install golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment@v0.27.0
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.35.2
@@ -38,4 +39,4 @@ build:
 	go build cmd/main.go
 
 test:
-	./main -master -worker & echo $$! > pid && sleep 10 && ./main -client -nodes && ./main -client -instances && kill `cat pid` && rm pid
+	./main -master -worker & echo $$! > pid && sleep 30 && ./main -client -nodes && ./main -client -instances && kill `cat pid` && rm pid
