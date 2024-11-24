@@ -8,11 +8,18 @@ service Rpc {
   rpc shell (stream ShellRequest) returns (stream ShellReply) {};
 }
 
+message Instance {
+  string name = 1;
+  string state = 2;
+  repeated string ipv4 = 3;
+  string image = 4;
+}
+
 message ListRequest {
 }
 
 message ListReply {
-  repeated string names = 1;
+  repeated Instance instances = 1;
 }
 
 message ShellRequest {

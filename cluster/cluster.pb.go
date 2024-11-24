@@ -20,28 +20,31 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type AgentInfo struct {
+type Instance struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Port int64 `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
+	Name  string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	State string   `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
+	Ipv4  []string `protobuf:"bytes,3,rep,name=ipv4,proto3" json:"ipv4,omitempty"`
+	Image string   `protobuf:"bytes,4,opt,name=image,proto3" json:"image,omitempty"`
 }
 
-func (x *AgentInfo) Reset() {
-	*x = AgentInfo{}
+func (x *Instance) Reset() {
+	*x = Instance{}
 	mi := &file_cluster_cluster_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AgentInfo) String() string {
+func (x *Instance) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AgentInfo) ProtoMessage() {}
+func (*Instance) ProtoMessage() {}
 
-func (x *AgentInfo) ProtoReflect() protoreflect.Message {
+func (x *Instance) ProtoReflect() protoreflect.Message {
 	mi := &file_cluster_cluster_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -53,72 +56,130 @@ func (x *AgentInfo) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AgentInfo.ProtoReflect.Descriptor instead.
-func (*AgentInfo) Descriptor() ([]byte, []int) {
+// Deprecated: Use Instance.ProtoReflect.Descriptor instead.
+func (*Instance) Descriptor() ([]byte, []int) {
 	return file_cluster_cluster_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *AgentInfo) GetPort() int64 {
+func (x *Instance) GetName() string {
 	if x != nil {
-		return x.Port
-	}
-	return 0
-}
-
-type JoinRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	NodeName  string     `protobuf:"bytes,1,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty"`
-	AgentInfo *AgentInfo `protobuf:"bytes,2,opt,name=agent_info,json=agentInfo,proto3" json:"agent_info,omitempty"`
-}
-
-func (x *JoinRequest) Reset() {
-	*x = JoinRequest{}
-	mi := &file_cluster_cluster_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *JoinRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*JoinRequest) ProtoMessage() {}
-
-func (x *JoinRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cluster_cluster_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use JoinRequest.ProtoReflect.Descriptor instead.
-func (*JoinRequest) Descriptor() ([]byte, []int) {
-	return file_cluster_cluster_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *JoinRequest) GetNodeName() string {
-	if x != nil {
-		return x.NodeName
+		return x.Name
 	}
 	return ""
 }
 
-func (x *JoinRequest) GetAgentInfo() *AgentInfo {
+func (x *Instance) GetState() string {
 	if x != nil {
-		return x.AgentInfo
+		return x.State
+	}
+	return ""
+}
+
+func (x *Instance) GetIpv4() []string {
+	if x != nil {
+		return x.Ipv4
 	}
 	return nil
 }
 
-type JoinReply struct {
+func (x *Instance) GetImage() string {
+	if x != nil {
+		return x.Image
+	}
+	return ""
+}
+
+type State struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Instances []*Instance `protobuf:"bytes,1,rep,name=instances,proto3" json:"instances,omitempty"`
+}
+
+func (x *State) Reset() {
+	*x = State{}
+	mi := &file_cluster_cluster_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *State) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*State) ProtoMessage() {}
+
+func (x *State) ProtoReflect() protoreflect.Message {
+	mi := &file_cluster_cluster_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use State.ProtoReflect.Descriptor instead.
+func (*State) Descriptor() ([]byte, []int) {
+	return file_cluster_cluster_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *State) GetInstances() []*Instance {
+	if x != nil {
+		return x.Instances
+	}
+	return nil
+}
+
+type SyncRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	State *State `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
+}
+
+func (x *SyncRequest) Reset() {
+	*x = SyncRequest{}
+	mi := &file_cluster_cluster_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncRequest) ProtoMessage() {}
+
+func (x *SyncRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cluster_cluster_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncRequest.ProtoReflect.Descriptor instead.
+func (*SyncRequest) Descriptor() ([]byte, []int) {
+	return file_cluster_cluster_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SyncRequest) GetState() *State {
+	if x != nil {
+		return x.State
+	}
+	return nil
+}
+
+type SyncReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -126,21 +187,21 @@ type JoinReply struct {
 	Uuid string `protobuf:"bytes,1,opt,name=uuid,proto3" json:"uuid,omitempty"`
 }
 
-func (x *JoinReply) Reset() {
-	*x = JoinReply{}
-	mi := &file_cluster_cluster_proto_msgTypes[2]
+func (x *SyncReply) Reset() {
+	*x = SyncReply{}
+	mi := &file_cluster_cluster_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *JoinReply) String() string {
+func (x *SyncReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*JoinReply) ProtoMessage() {}
+func (*SyncReply) ProtoMessage() {}
 
-func (x *JoinReply) ProtoReflect() protoreflect.Message {
-	mi := &file_cluster_cluster_proto_msgTypes[2]
+func (x *SyncReply) ProtoReflect() protoreflect.Message {
+	mi := &file_cluster_cluster_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -151,12 +212,12 @@ func (x *JoinReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use JoinReply.ProtoReflect.Descriptor instead.
-func (*JoinReply) Descriptor() ([]byte, []int) {
-	return file_cluster_cluster_proto_rawDescGZIP(), []int{2}
+// Deprecated: Use SyncReply.ProtoReflect.Descriptor instead.
+func (*SyncReply) Descriptor() ([]byte, []int) {
+	return file_cluster_cluster_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *JoinReply) GetUuid() string {
+func (x *SyncReply) GetUuid() string {
 	if x != nil {
 		return x.Uuid
 	}
@@ -168,22 +229,27 @@ var File_cluster_cluster_proto protoreflect.FileDescriptor
 var file_cluster_cluster_proto_rawDesc = []byte{
 	0x0a, 0x15, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x2f, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65,
 	0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x07, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72,
-	0x22, 0x1f, 0x0a, 0x09, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x12, 0x0a,
-	0x04, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04, 0x70, 0x6f, 0x72,
-	0x74, 0x22, 0x5d, 0x0a, 0x0b, 0x4a, 0x6f, 0x69, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x12, 0x1b, 0x0a, 0x09, 0x6e, 0x6f, 0x64, 0x65, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x08, 0x6e, 0x6f, 0x64, 0x65, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x31, 0x0a,
-	0x0a, 0x61, 0x67, 0x65, 0x6e, 0x74, 0x5f, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x12, 0x2e, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x2e, 0x41, 0x67, 0x65, 0x6e,
-	0x74, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x09, 0x61, 0x67, 0x65, 0x6e, 0x74, 0x49, 0x6e, 0x66, 0x6f,
-	0x22, 0x1f, 0x0a, 0x09, 0x4a, 0x6f, 0x69, 0x6e, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x12, 0x0a,
-	0x04, 0x75, 0x75, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x75, 0x75, 0x69,
-	0x64, 0x32, 0x3d, 0x0a, 0x03, 0x52, 0x70, 0x63, 0x12, 0x36, 0x0a, 0x04, 0x6a, 0x6f, 0x69, 0x6e,
-	0x12, 0x14, 0x2e, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x2e, 0x4a, 0x6f, 0x69, 0x6e, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72,
-	0x2e, 0x4a, 0x6f, 0x69, 0x6e, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x28, 0x01, 0x30, 0x01,
-	0x42, 0x0b, 0x5a, 0x09, 0x2e, 0x2f, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x22, 0x5e, 0x0a, 0x08, 0x49, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x12, 0x0a, 0x04,
+	0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65,
+	0x12, 0x14, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x69, 0x70, 0x76, 0x34, 0x18, 0x03,
+	0x20, 0x03, 0x28, 0x09, 0x52, 0x04, 0x69, 0x70, 0x76, 0x34, 0x12, 0x14, 0x0a, 0x05, 0x69, 0x6d,
+	0x61, 0x67, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x69, 0x6d, 0x61, 0x67, 0x65,
+	0x22, 0x38, 0x0a, 0x05, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x2f, 0x0a, 0x09, 0x69, 0x6e, 0x73,
+	0x74, 0x61, 0x6e, 0x63, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x63,
+	0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x2e, 0x49, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x52,
+	0x09, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65, 0x73, 0x22, 0x33, 0x0a, 0x0b, 0x53, 0x79,
+	0x6e, 0x63, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x24, 0x0a, 0x05, 0x73, 0x74, 0x61,
+	0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x63, 0x6c, 0x75, 0x73, 0x74,
+	0x65, 0x72, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x22,
+	0x1f, 0x0a, 0x09, 0x53, 0x79, 0x6e, 0x63, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x12, 0x0a, 0x04,
+	0x75, 0x75, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x75, 0x75, 0x69, 0x64,
+	0x32, 0x3d, 0x0a, 0x03, 0x52, 0x70, 0x63, 0x12, 0x36, 0x0a, 0x04, 0x73, 0x79, 0x6e, 0x63, 0x12,
+	0x14, 0x2e, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x2e, 0x53, 0x79, 0x6e, 0x63, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x12, 0x2e, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x2e,
+	0x53, 0x79, 0x6e, 0x63, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x22, 0x00, 0x28, 0x01, 0x30, 0x01, 0x42,
+	0x0b, 0x5a, 0x09, 0x2e, 0x2f, 0x63, 0x6c, 0x75, 0x73, 0x74, 0x65, 0x72, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -198,21 +264,23 @@ func file_cluster_cluster_proto_rawDescGZIP() []byte {
 	return file_cluster_cluster_proto_rawDescData
 }
 
-var file_cluster_cluster_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_cluster_cluster_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_cluster_cluster_proto_goTypes = []any{
-	(*AgentInfo)(nil),   // 0: cluster.AgentInfo
-	(*JoinRequest)(nil), // 1: cluster.JoinRequest
-	(*JoinReply)(nil),   // 2: cluster.JoinReply
+	(*Instance)(nil),    // 0: cluster.Instance
+	(*State)(nil),       // 1: cluster.State
+	(*SyncRequest)(nil), // 2: cluster.SyncRequest
+	(*SyncReply)(nil),   // 3: cluster.SyncReply
 }
 var file_cluster_cluster_proto_depIdxs = []int32{
-	0, // 0: cluster.JoinRequest.agent_info:type_name -> cluster.AgentInfo
-	1, // 1: cluster.Rpc.join:input_type -> cluster.JoinRequest
-	2, // 2: cluster.Rpc.join:output_type -> cluster.JoinReply
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // 0: cluster.State.instances:type_name -> cluster.Instance
+	1, // 1: cluster.SyncRequest.state:type_name -> cluster.State
+	2, // 2: cluster.Rpc.sync:input_type -> cluster.SyncRequest
+	3, // 3: cluster.Rpc.sync:output_type -> cluster.SyncReply
+	3, // [3:4] is the sub-list for method output_type
+	2, // [2:3] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_cluster_cluster_proto_init() }
@@ -226,7 +294,7 @@ func file_cluster_cluster_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_cluster_cluster_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

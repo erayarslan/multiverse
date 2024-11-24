@@ -2,10 +2,8 @@ package agent
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"log"
-	"multiverse/common"
 	"multiverse/multipass"
 	"net"
 	"strconv"
@@ -14,7 +12,6 @@ import (
 	"github.com/google/uuid"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -29,7 +26,7 @@ type Server interface {
 
 type server struct {
 	UnimplementedRpcServer
-	multipassClient multipass.RpcClient
+	multipassClient multipass.Client
 	listener        net.Listener
 	grpcServer      *grpc.Server
 	sshMap          map[string]SSH
@@ -69,33 +66,24 @@ func (s *server) Port() int {
 }
 
 func (s *server) List(ctx context.Context, _ *ListRequest) (*ListReply, error) {
-	stream, err := s.multipassClient.List(ctx)
+	multipassInstances, err := s.multipassClient.List(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := common.ExecuteOnceWithBidiClient(stream, &multipass.ListRequest{})
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ListReply{
-		Names: make([]string, 0),
-	}
-
-	listContents := res.GetListContents()
-	if listContents == nil {
-		return response, nil
-	}
-
-	if listReplyInstanceList, ok := listContents.(*multipass.ListReply_InstanceList); ok {
-		instances := listReplyInstanceList.InstanceList.GetInstances()
-		for _, instance := range instances {
-			response.Names = append(response.Names, instance.Name)
+	instances := make([]*Instance, len(multipassInstances))
+	for i, multipassInstance := range multipassInstances {
+		instances[i] = &Instance{
+			Name:  multipassInstance.Name,
+			State: multipassInstance.State,
+			Ipv4:  multipassInstance.Ipv4,
+			Image: multipassInstance.Image,
 		}
 	}
 
-	return response, nil
+	return &ListReply{
+		Instances: instances,
+	}, nil
 }
 
 type windowSize struct {
@@ -186,29 +174,14 @@ func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
 	stderr := &shellReplyWriter{stream: stream, isErr: true}
 	stdin := NewShellRequestReader(stream, h, w)
 
-	sshInfoStream, err := s.multipassClient.SshInfo(context.Background())
-	if err != nil {
-		return err
-	}
-
 	instanceName := md.Get("instanceName")
 	if len(instanceName) == 0 {
 		return fmt.Errorf("instance name not found in context")
 	}
 
-	res, err := common.ExecuteOnceWithBidiClient(
-		sshInfoStream,
-		&multipass.SSHInfoRequest{
-			InstanceName: []string{instanceName[0]},
-		},
-	)
+	info, err := s.multipassClient.SSHInfo(context.Background(), instanceName[0])
 	if err != nil {
 		return err
-	}
-
-	info, ok := res.SshInfo[instanceName[0]]
-	if !ok {
-		return fmt.Errorf("instance not found: %s", instanceName)
 	}
 
 	id := uuid.Must(uuid.NewRandom()).String()
@@ -225,23 +198,7 @@ func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
 	return nil
 }
 
-func NewServer(target string, addr string, multipassCertFilePath string, multipassKeyFilePath string) (Server, error) {
-	multipassCertificate, err := tls.LoadX509KeyPair(multipassCertFilePath, multipassKeyFilePath)
-	if err != nil {
-		return nil, err
-	}
-
-	multipassTransportCredentials := credentials.NewTLS(&tls.Config{
-		Certificates:       []tls.Certificate{multipassCertificate},
-		InsecureSkipVerify: true, // nolint:gosec
-	})
-
-	dialOpts := []grpc.DialOption{grpc.WithTransportCredentials(multipassTransportCredentials)}
-	conn, err := grpc.NewClient(target, dialOpts...)
-	if err != nil {
-		return nil, err
-	}
-
+func NewServer(addr string, multipassClient multipass.Client) (Server, error) {
 	lis, err := net.Listen("tcp", fmt.Sprintf("%s:0", addr))
 	if err != nil {
 		return nil, err
@@ -250,7 +207,7 @@ func NewServer(target string, addr string, multipassCertFilePath string, multipa
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 	server := &server{
-		multipassClient: multipass.NewRpcClient(conn),
+		multipassClient: multipassClient,
 		listener:        lis,
 		grpcServer:      grpcServer,
 		sshMap:          make(map[string]SSH),

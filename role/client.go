@@ -2,12 +2,13 @@ package role
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"multiverse/api"
 	"multiverse/config"
 	"os"
-
-	"github.com/jedib0t/go-pretty/v6/table"
+	"strings"
+	"text/tabwriter"
 )
 
 type client struct {
@@ -16,25 +17,60 @@ type client struct {
 	doneCh    chan struct{}
 }
 
-func (c *client) list() {
-	list, err := c.apiClient.List(context.Background())
+func (c *client) instances() {
+	getInstancesReply, err := c.apiClient.Instances(context.Background())
 	if err != nil {
-		log.Fatalf("error while list: %v", err)
+		log.Fatalf("error while instances: %v", err)
 	}
 
-	t := table.NewWriter()
-	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"#", "Node Name", "Name"})
-	rows := make([]table.Row, len(list.Instances))
-	for i, n := range list.Instances {
-		rows = append(rows, table.Row{i + 1, n.NodeName, n.InstanceName})
+	w := tabwriter.NewWriter(os.Stdout, 10, 1, 5, ' ', 0)
+
+	fs := "%s\t%s\t%s\t%s\t%s\n"
+	_, err = fmt.Fprintf(w, fs, "Node Name", "Instance Name", "State", "IPv4", "Image")
+	if err != nil {
+		return
 	}
-	t.AppendRows(rows)
-	t.Render()
+	for _, n := range getInstancesReply.Instances {
+		_, err = fmt.Fprintf(w, fs, n.NodeName, n.InstanceName, n.State, strings.Join(n.Ipv4, "\n"), n.Image)
+		if err != nil {
+			return
+		}
+	}
+
+	err = w.Flush()
+	if err != nil {
+		return
+	}
+}
+
+func (c *client) nodes() {
+	getNodesReply, err := c.apiClient.Nodes(context.Background())
+	if err != nil {
+		log.Fatalf("error while nodes: %v", err)
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 10, 1, 5, ' ', 0)
+
+	fs := "%s\t%s\t%s\n"
+	_, err = fmt.Fprintf(w, fs, "Node Name", "IPv4", "Last Sync")
+	if err != nil {
+		return
+	}
+	for _, n := range getNodesReply.Nodes {
+		_, err = fmt.Fprintf(w, fs, n.Name, strings.Join(n.Ipv4, "\n"), n.LastSync.AsTime().Format("2006-01-02 15:04:05 MST"))
+		if err != nil {
+			return
+		}
+	}
+
+	err = w.Flush()
+	if err != nil {
+		return
+	}
 }
 
 func (c *client) shell() {
-	err := c.apiClient.Shell(context.Background(), c.cfg.ShellNodeName, c.cfg.ShellInstanceName)
+	err := c.apiClient.Shell(context.Background(), c.cfg.ShellInstanceName)
 	if err != nil {
 		log.Fatalf("error while shell: %v", err)
 	}
@@ -49,9 +85,12 @@ func (c *client) Execute() error {
 		log.Fatalf("error while creating api client: %v", err)
 	}
 
-	if c.cfg.List {
-		c.list()
-	} else if c.cfg.Shell {
+	switch {
+	case c.cfg.Instances:
+		c.instances()
+	case c.cfg.Nodes:
+		c.nodes()
+	case c.cfg.Shell:
 		c.shell()
 	}
 

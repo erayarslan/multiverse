@@ -5,6 +5,7 @@ import (
 	"multiverse/agent"
 	"multiverse/cluster"
 	"multiverse/config"
+	"multiverse/multipass"
 )
 
 type worker struct {
@@ -15,12 +16,24 @@ type worker struct {
 func (c *worker) Execute() error {
 	log.Printf("master to connect addr: %s", c.cfg.MasterAddr)
 
-	server, err := agent.NewServer(c.cfg.MultipassAddr, c.cfg.MultipassProxyBind, c.cfg.MultipassCertFilePath, c.cfg.MultipassKeyFilePath)
+	multipassClient, err := multipass.NewClient(
+		c.cfg.MultipassAddr,
+		c.cfg.MultipassCertFilePath,
+		c.cfg.MultipassKeyFilePath,
+	)
+	if err != nil {
+		log.Fatalf("error while creating multipass client: %v", err)
+	}
+
+	state := agent.NewState(multipassClient)
+	go state.Run()
+
+	server, err := agent.NewServer(c.cfg.MultipassProxyBind, multipassClient)
 	if err != nil {
 		log.Fatalf("error while creating multipass proxy: %v", err)
 	}
 
-	c.clusterClient, err = cluster.NewClient(c.cfg.MasterAddr, c.cfg.NodeName, server)
+	c.clusterClient, err = cluster.NewClient(c.cfg.MasterAddr, c.cfg.NodeName, server, multipassClient, state)
 	if err != nil {
 		log.Fatalf("error while creating worker: %v", err)
 	}
@@ -32,9 +45,9 @@ func (c *worker) Execute() error {
 	}()
 
 	go func() {
-		err = c.clusterClient.Join()
+		err = c.clusterClient.Sync()
 		if err != nil {
-			log.Fatalf("error while joining master: %v", err)
+			log.Fatalf("error while sync to master: %v", err)
 		}
 	}()
 

@@ -32,36 +32,44 @@ func (s *server) Serve() error {
 	return s.grpcServer.Serve(s.listener)
 }
 
-func (s *server) List(ctx context.Context, _ *ListRequest) (*ListReply, error) {
-	listReply := &ListReply{
+func (s *server) Instances(_ context.Context, _ *GetInstancesRequest) (*GetInstancesReply, error) {
+	getInstancesReply := &GetInstancesReply{
 		Instances: make([]*Instance, 0),
 	}
 	for _, workerInfo := range s.clusterServer.GetWorkerInfoMap() {
-		names, err := workerInfo.AgentClient.List(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, name := range names {
-			listReply.Instances = append(listReply.Instances, &Instance{
+		for _, instance := range workerInfo.State.Instances {
+			getInstancesReply.Instances = append(getInstancesReply.Instances, &Instance{
 				NodeName:     workerInfo.NodeName,
-				InstanceName: name,
+				InstanceName: instance.Name,
+				State:        instance.State,
+				Ipv4:         instance.Ipv4,
+				Image:        instance.Image,
 			})
 		}
 	}
 
-	return listReply, nil
+	return getInstancesReply, nil
+}
+
+func (s *server) Nodes(_ context.Context, _ *GetNodesRequest) (*GetNodesReply, error) {
+	getNodesReply := &GetNodesReply{
+		Nodes: make([]*Node, 0),
+	}
+	for _, workerInfo := range s.clusterServer.GetWorkerInfoMap() {
+		getNodesReply.Nodes = append(getNodesReply.Nodes, &Node{
+			Name:     workerInfo.NodeName,
+			LastSync: workerInfo.LastSync,
+			Ipv4:     []string{workerInfo.IPPort},
+		})
+	}
+
+	return getNodesReply, nil
 }
 
 func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]) error {
 	md, ok := metadata.FromIncomingContext(stream.Context())
 	if !ok {
 		return fmt.Errorf("metadata not found in context")
-	}
-
-	nodeName := md.Get("nodeName")
-	if len(nodeName) == 0 {
-		return fmt.Errorf("node name not found in context")
 	}
 
 	instanceName := md.Get("instanceName")
@@ -71,13 +79,15 @@ func (s *server) Shell(stream grpc.BidiStreamingServer[ShellRequest, ShellReply]
 
 	var agentClient agent.Client
 	for _, workerInfo := range s.clusterServer.GetWorkerInfoMap() {
-		if workerInfo.NodeName == nodeName[0] {
-			agentClient = workerInfo.AgentClient
-			break
+		for _, instance := range workerInfo.State.Instances {
+			if instance.Name == instanceName[0] {
+				agentClient = workerInfo.AgentClient
+				break
+			}
 		}
 	}
 	if agentClient == nil {
-		return fmt.Errorf("agent client not found on node name: %s", nodeName[0])
+		return fmt.Errorf("agent client not found with instance name: %s", instanceName[0])
 	}
 
 	ctx := metadata.NewOutgoingContext(context.Background(), md.Copy())

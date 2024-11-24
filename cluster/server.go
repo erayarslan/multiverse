@@ -6,8 +6,12 @@ import (
 	"multiverse/agent"
 	"multiverse/common"
 	"net"
+	"strconv"
 	"strings"
 	"sync"
+
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -16,7 +20,10 @@ import (
 
 type WorkerInfo struct {
 	AgentClient agent.Client
-	Stream      grpc.BidiStreamingServer[JoinRequest, JoinReply]
+	IPPort      string
+	Stream      grpc.BidiStreamingServer[SyncRequest, SyncReply]
+	State       *State
+	LastSync    *timestamppb.Timestamp
 	NodeName    string
 	UUID        string
 }
@@ -24,26 +31,36 @@ type WorkerInfo struct {
 type server struct {
 	UnimplementedRpcServer
 	listener      net.Listener
-	workerInfoMap map[string]WorkerInfo
+	workerInfoMap map[string]*WorkerInfo
 	grpcServer    *grpc.Server
 	workersMu     sync.RWMutex
 }
 
 type Server interface {
-	GetWorkerInfoMap() map[string]WorkerInfo
+	GetWorkerInfoMap() map[string]*WorkerInfo
 	Serve() error
 }
 
-func (s *server) GetWorkerInfoMap() map[string]WorkerInfo {
+func (s *server) GetWorkerInfoMap() map[string]*WorkerInfo {
 	s.workersMu.Lock()
 	defer s.workersMu.Unlock()
 	return s.workerInfoMap
 }
 
-func (s *server) addWorkerInfo(uid string, workerInfo WorkerInfo) {
+func (s *server) addWorkerInfo(uid string, workerInfo *WorkerInfo) {
 	s.workersMu.Lock()
 	defer s.workersMu.Unlock()
 	s.workerInfoMap[uid] = workerInfo
+}
+
+func (s *server) updateState(uid string, state *State) error {
+	s.workersMu.Lock()
+	defer s.workersMu.Unlock()
+	if workerInfo, ok := s.workerInfoMap[uid]; ok {
+		workerInfo.State = state
+		workerInfo.LastSync = timestamppb.Now()
+	}
+	return nil
 }
 
 func (s *server) removeWorkerInfo(uid string) {
@@ -62,38 +79,64 @@ func (s *server) Serve() error {
 	return s.grpcServer.Serve(s.listener)
 }
 
-func (s *server) Join(stream grpc.BidiStreamingServer[JoinRequest, JoinReply]) error {
+func (s *server) Sync(stream grpc.BidiStreamingServer[SyncRequest, SyncReply]) error {
 	id := uuid.Must(uuid.NewRandom()).String()
 	defer log.Printf("client disconnected: %s", id)
 	defer s.removeWorkerInfo(id)
 
-	p, ok := peer.FromContext(stream.Context())
+	ctx := stream.Context()
+
+	p, ok := peer.FromContext(ctx)
 	if !ok {
 		return fmt.Errorf("failed to get peer from context")
 	}
 
-	return common.ListenBidiServer(stream, func(req *JoinRequest) error {
-		if err := stream.Send(&JoinReply{
-			Uuid: id,
-		}); err != nil {
-			return fmt.Errorf("failed to send join reply on master: %w", err)
-		}
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return fmt.Errorf("metadata not found in context")
+	}
 
-		host := strings.Split(p.Addr.String(), ":")[0]
-		target := fmt.Sprintf("%s:%d", host, req.AgentInfo.Port)
-		agentClient, err := agent.NewClient(target)
-		if err != nil {
-			return fmt.Errorf("failed to create multipass client: %w", err)
-		}
+	nodeName := md.Get("nodeName")
+	if len(nodeName) == 0 {
+		return fmt.Errorf("node name not found in context")
+	}
 
-		s.addWorkerInfo(id, WorkerInfo{
-			AgentClient: agentClient,
-			Stream:      stream,
-			NodeName:    req.NodeName,
-			UUID:        id,
-		})
-		log.Printf("joined node name: %s", req.NodeName)
-		return nil
+	agentPort := md.Get("agentPort")
+	if len(agentPort) == 0 {
+		return fmt.Errorf("agent port not found in context")
+	}
+	port, _ := strconv.Atoi(agentPort[0])
+
+	host := strings.Split(p.Addr.String(), ":")[0]
+	target := fmt.Sprintf("%s:%d", host, port)
+
+	if err := stream.Send(&SyncReply{
+		Uuid: id,
+	}); err != nil {
+		return fmt.Errorf("failed to send join reply on master: %w", err)
+	}
+
+	agentClient, err := agent.NewClient(target)
+	if err != nil {
+		return fmt.Errorf("failed to create multipass client: %w", err)
+	}
+
+	s.addWorkerInfo(id, &WorkerInfo{
+		AgentClient: agentClient,
+		Stream:      stream,
+		NodeName:    nodeName[0],
+		UUID:        id,
+		State: &State{
+			Instances: make([]*Instance, 0),
+		},
+		IPPort:   target,
+		LastSync: timestamppb.Now(),
+	})
+
+	log.Printf("joined node name: %s, uuid: %s", nodeName[0], id)
+
+	return common.ListenBidiServer(stream, func(req *SyncRequest) error {
+		return s.updateState(id, req.GetState())
 	})
 }
 
@@ -106,7 +149,7 @@ func NewServer(addr string) (Server, error) {
 	grpcServer := grpc.NewServer(opts...)
 	server := &server{
 		workersMu:     sync.RWMutex{},
-		workerInfoMap: map[string]WorkerInfo{},
+		workerInfoMap: map[string]*WorkerInfo{},
 		listener:      lis,
 		grpcServer:    grpcServer,
 	}

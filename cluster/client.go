@@ -6,7 +6,11 @@ import (
 	"log"
 	"multiverse/agent"
 	"multiverse/common"
+	"multiverse/multipass"
+	"strconv"
 	"time"
+
+	"google.golang.org/grpc/metadata"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
@@ -14,17 +18,19 @@ import (
 )
 
 type client struct {
-	stream   grpc.BidiStreamingClient[JoinRequest, JoinReply]
-	client   RpcClient
-	conn     *grpc.ClientConn
-	uuid     string
-	nodeName string
-	port     int64
-	closed   bool
+	stream          grpc.BidiStreamingClient[SyncRequest, SyncReply]
+	client          RpcClient
+	agentServer     agent.Server
+	multipassClient multipass.Client
+	state           agent.State
+	conn            *grpc.ClientConn
+	uuid            string
+	nodeName        string
+	closed          bool
 }
 
 type Client interface {
-	Join() error
+	Sync() error
 	Close() error
 }
 
@@ -38,14 +44,14 @@ func (c *client) Close() error {
 	return c.conn.Close()
 }
 
-func (c *client) Join() error {
+func (c *client) Sync() error {
 	if !c.isReady() {
 		return fmt.Errorf("could not connect")
 	}
-	if err := c.join(); err != nil && !c.closed {
-		log.Printf("error while joining: %v", err)
+	if err := c.sync(); err != nil && !c.closed {
+		log.Printf("error while sync: %v", err)
 		log.Printf("reconnecting...")
-		return c.Join()
+		return c.Sync()
 	}
 	return nil
 }
@@ -67,39 +73,72 @@ func (c *client) isReady() bool {
 	}
 }
 
-func (c *client) join() error {
+func (c *client) sync() error {
+	ctx := metadata.NewOutgoingContext(context.Background(), metadata.Pairs(
+		"nodeName", c.nodeName,
+		"agentPort", strconv.Itoa(c.agentServer.Port()),
+	))
+
 	var err error
-	c.stream, err = c.client.Join(context.Background())
+	c.stream, err = c.client.Sync(ctx)
 	if err != nil {
 		return err
 	}
 
-	if err = c.stream.Send(&JoinRequest{
-		NodeName: c.nodeName,
-		AgentInfo: &AgentInfo{
-			Port: c.port,
-		},
-	}); err != nil {
-		return err
-	}
-
-	return common.ListenBidiClient(c.stream, func(res *JoinReply) error {
+	return common.ListenBidiClient(c.stream, func(res *SyncReply) error {
 		c.uuid = res.Uuid
+		log.Printf("joined with uuid: %s", c.uuid)
 		return nil
 	})
 }
 
-func NewClient(addr string, nodeName string, agentServer agent.Server) (Client, error) {
+func (c *client) stateSync() {
+	for state := range c.state.Listen() { //nolint:govet
+		if c.closed {
+			continue
+		}
+
+		clusterInstances := make([]*Instance, 0, len(state.Instances))
+		for _, instance := range state.Instances {
+			clusterInstances = append(clusterInstances, &Instance{
+				Name:  instance.Name,
+				State: instance.State,
+				Ipv4:  instance.Ipv4,
+				Image: instance.Image,
+			})
+		}
+
+		if c.stream == nil {
+			continue
+		}
+
+		if err := c.stream.Send(&SyncRequest{
+			State: &State{
+				Instances: clusterInstances,
+			},
+		}); err != nil {
+			log.Printf("error while sending state: %v", err)
+		}
+	}
+}
+
+func NewClient(addr string, nodeName string,
+	agentServer agent.Server, multipassClient multipass.Client, state agent.State,
+) (Client, error) {
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	conn, err := grpc.NewClient(addr, opts...)
 	if err != nil {
 		return nil, err
 	}
 	rpcClient := NewRpcClient(conn)
-	return &client{
-		conn:     conn,
-		client:   rpcClient,
-		port:     int64(agentServer.Port()),
-		nodeName: nodeName,
-	}, nil
+	c := &client{
+		conn:            conn,
+		client:          rpcClient,
+		agentServer:     agentServer,
+		nodeName:        nodeName,
+		multipassClient: multipassClient,
+		state:           state,
+	}
+	go c.stateSync()
+	return c, nil
 }

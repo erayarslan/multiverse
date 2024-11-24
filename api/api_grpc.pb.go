@@ -19,15 +19,17 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Rpc_List_FullMethodName  = "/api.Rpc/list"
-	Rpc_Shell_FullMethodName = "/api.Rpc/shell"
+	Rpc_Instances_FullMethodName = "/api.Rpc/instances"
+	Rpc_Nodes_FullMethodName     = "/api.Rpc/nodes"
+	Rpc_Shell_FullMethodName     = "/api.Rpc/shell"
 )
 
 // RpcClient is the client API for Rpc service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RpcClient interface {
-	List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListReply, error)
+	Instances(ctx context.Context, in *GetInstancesRequest, opts ...grpc.CallOption) (*GetInstancesReply, error)
+	Nodes(ctx context.Context, in *GetNodesRequest, opts ...grpc.CallOption) (*GetNodesReply, error)
 	Shell(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ShellRequest, ShellReply], error)
 }
 
@@ -39,10 +41,20 @@ func NewRpcClient(cc grpc.ClientConnInterface) RpcClient {
 	return &rpcClient{cc}
 }
 
-func (c *rpcClient) List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListReply, error) {
+func (c *rpcClient) Instances(ctx context.Context, in *GetInstancesRequest, opts ...grpc.CallOption) (*GetInstancesReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListReply)
-	err := c.cc.Invoke(ctx, Rpc_List_FullMethodName, in, out, cOpts...)
+	out := new(GetInstancesReply)
+	err := c.cc.Invoke(ctx, Rpc_Instances_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *rpcClient) Nodes(ctx context.Context, in *GetNodesRequest, opts ...grpc.CallOption) (*GetNodesReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetNodesReply)
+	err := c.cc.Invoke(ctx, Rpc_Nodes_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +78,8 @@ type Rpc_ShellClient = grpc.BidiStreamingClient[ShellRequest, ShellReply]
 // All implementations must embed UnimplementedRpcServer
 // for forward compatibility.
 type RpcServer interface {
-	List(context.Context, *ListRequest) (*ListReply, error)
+	Instances(context.Context, *GetInstancesRequest) (*GetInstancesReply, error)
+	Nodes(context.Context, *GetNodesRequest) (*GetNodesReply, error)
 	Shell(grpc.BidiStreamingServer[ShellRequest, ShellReply]) error
 	mustEmbedUnimplementedRpcServer()
 }
@@ -78,8 +91,11 @@ type RpcServer interface {
 // pointer dereference when methods are called.
 type UnimplementedRpcServer struct{}
 
-func (UnimplementedRpcServer) List(context.Context, *ListRequest) (*ListReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
+func (UnimplementedRpcServer) Instances(context.Context, *GetInstancesRequest) (*GetInstancesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Instances not implemented")
+}
+func (UnimplementedRpcServer) Nodes(context.Context, *GetNodesRequest) (*GetNodesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Nodes not implemented")
 }
 func (UnimplementedRpcServer) Shell(grpc.BidiStreamingServer[ShellRequest, ShellReply]) error {
 	return status.Errorf(codes.Unimplemented, "method Shell not implemented")
@@ -105,20 +121,38 @@ func RegisterRpcServer(s grpc.ServiceRegistrar, srv RpcServer) {
 	s.RegisterService(&Rpc_ServiceDesc, srv)
 }
 
-func _Rpc_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListRequest)
+func _Rpc_Instances_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetInstancesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RpcServer).List(ctx, in)
+		return srv.(RpcServer).Instances(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Rpc_List_FullMethodName,
+		FullMethod: Rpc_Instances_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RpcServer).List(ctx, req.(*ListRequest))
+		return srv.(RpcServer).Instances(ctx, req.(*GetInstancesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Rpc_Nodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetNodesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RpcServer).Nodes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Rpc_Nodes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RpcServer).Nodes(ctx, req.(*GetNodesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -138,8 +172,12 @@ var Rpc_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*RpcServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "list",
-			Handler:    _Rpc_List_Handler,
+			MethodName: "instances",
+			Handler:    _Rpc_Instances_Handler,
+		},
+		{
+			MethodName: "nodes",
+			Handler:    _Rpc_Nodes_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

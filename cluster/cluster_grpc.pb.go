@@ -19,14 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Rpc_Join_FullMethodName = "/cluster.Rpc/join"
+	Rpc_Sync_FullMethodName = "/cluster.Rpc/sync"
 )
 
 // RpcClient is the client API for Rpc service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RpcClient interface {
-	Join(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[JoinRequest, JoinReply], error)
+	Sync(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[SyncRequest, SyncReply], error)
 }
 
 type rpcClient struct {
@@ -37,24 +37,24 @@ func NewRpcClient(cc grpc.ClientConnInterface) RpcClient {
 	return &rpcClient{cc}
 }
 
-func (c *rpcClient) Join(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[JoinRequest, JoinReply], error) {
+func (c *rpcClient) Sync(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[SyncRequest, SyncReply], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &Rpc_ServiceDesc.Streams[0], Rpc_Join_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &Rpc_ServiceDesc.Streams[0], Rpc_Sync_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[JoinRequest, JoinReply]{ClientStream: stream}
+	x := &grpc.GenericClientStream[SyncRequest, SyncReply]{ClientStream: stream}
 	return x, nil
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Rpc_JoinClient = grpc.BidiStreamingClient[JoinRequest, JoinReply]
+type Rpc_SyncClient = grpc.BidiStreamingClient[SyncRequest, SyncReply]
 
 // RpcServer is the server API for Rpc service.
 // All implementations must embed UnimplementedRpcServer
 // for forward compatibility.
 type RpcServer interface {
-	Join(grpc.BidiStreamingServer[JoinRequest, JoinReply]) error
+	Sync(grpc.BidiStreamingServer[SyncRequest, SyncReply]) error
 	mustEmbedUnimplementedRpcServer()
 }
 
@@ -65,8 +65,8 @@ type RpcServer interface {
 // pointer dereference when methods are called.
 type UnimplementedRpcServer struct{}
 
-func (UnimplementedRpcServer) Join(grpc.BidiStreamingServer[JoinRequest, JoinReply]) error {
-	return status.Errorf(codes.Unimplemented, "method Join not implemented")
+func (UnimplementedRpcServer) Sync(grpc.BidiStreamingServer[SyncRequest, SyncReply]) error {
+	return status.Errorf(codes.Unimplemented, "method Sync not implemented")
 }
 func (UnimplementedRpcServer) mustEmbedUnimplementedRpcServer() {}
 func (UnimplementedRpcServer) testEmbeddedByValue()             {}
@@ -89,12 +89,12 @@ func RegisterRpcServer(s grpc.ServiceRegistrar, srv RpcServer) {
 	s.RegisterService(&Rpc_ServiceDesc, srv)
 }
 
-func _Rpc_Join_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(RpcServer).Join(&grpc.GenericServerStream[JoinRequest, JoinReply]{ServerStream: stream})
+func _Rpc_Sync_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RpcServer).Sync(&grpc.GenericServerStream[SyncRequest, SyncReply]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Rpc_JoinServer = grpc.BidiStreamingServer[JoinRequest, JoinReply]
+type Rpc_SyncServer = grpc.BidiStreamingServer[SyncRequest, SyncReply]
 
 // Rpc_ServiceDesc is the grpc.ServiceDesc for Rpc service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -105,8 +105,8 @@ var Rpc_ServiceDesc = grpc.ServiceDesc{
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "join",
-			Handler:       _Rpc_Join_Handler,
+			StreamName:    "sync",
+			Handler:       _Rpc_Sync_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

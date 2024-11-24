@@ -13,7 +13,7 @@ type client struct {
 }
 
 type Client interface {
-	List(ctx context.Context) ([]string, error)
+	List(ctx context.Context) ([]*Instance, error)
 	Shell(ctx context.Context) (grpc.BidiStreamingClient[ShellRequest, ShellReply], error)
 	Close() error
 }
@@ -22,15 +22,23 @@ func (c *client) Close() error {
 	return c.conn.Close()
 }
 
-func (c *client) List(ctx context.Context) ([]string, error) {
-	names := make([]string, 0)
-
+func (c *client) List(ctx context.Context) ([]*Instance, error) {
 	response, err := c.client.List(ctx, &ListRequest{})
 	if err != nil {
-		return names, err
+		return make([]*Instance, 0), err
 	}
 
-	return response.GetNames(), err
+	instances := make([]*Instance, len(response.GetInstances()))
+	for i, agentInstance := range response.GetInstances() {
+		instances[i] = &Instance{
+			Name:  agentInstance.Name,
+			State: agentInstance.State,
+			Ipv4:  agentInstance.Ipv4,
+			Image: agentInstance.Image,
+		}
+	}
+
+	return instances, nil
 }
 
 func (c *client) Shell(ctx context.Context) (grpc.BidiStreamingClient[ShellRequest, ShellReply], error) {

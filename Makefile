@@ -28,12 +28,16 @@ pre-commit:
 	go mod tidy
 	fieldalignment -fix ./...
 	$(LINT_CMD) --fix
+	make proto
 
 proto:
-	protoc --go_out=. --go-grpc_out=. --experimental_allow_proto3_optional agent/agent.proto api/api.proto cluster/cluster.proto multipass/multipass.proto
+	protoc --go_out=. --go-grpc_out=. --experimental_allow_proto3_optional agent/agent.proto
+	protoc --go_out=. --go-grpc_out=. --experimental_allow_proto3_optional api/api.proto
+	protoc --go_out=. --go-grpc_out=. --experimental_allow_proto3_optional cluster/cluster.proto
+	protoc --go_out=. --go-grpc_out=. --experimental_allow_proto3_optional multipass/multipass.proto
 
 build:
 	go build cmd/main.go
 
 test:
-	./main -master -worker & echo $$! > pid && sleep 5 && ./main -client -list && kill `cat pid` && rm pid
+	./main -master -worker & echo $$! > pid && sleep 10 && ./main -client -nodes && ./main -client -instances && kill `cat pid` && rm pid

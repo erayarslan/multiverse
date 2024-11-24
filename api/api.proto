@@ -3,20 +3,39 @@ package api;
 
 option go_package = "./api";
 
+import "google/protobuf/timestamp.proto";
+
 service Rpc {
-  rpc list (ListRequest) returns (ListReply) {};
+  rpc instances (GetInstancesRequest) returns (GetInstancesReply) {};
+  rpc nodes (GetNodesRequest) returns (GetNodesReply) {};
   rpc shell (stream ShellRequest) returns (stream ShellReply) {};
 }
 
-message ListRequest {
+message GetInstancesRequest {
+}
+
+message GetNodesRequest {
+}
+
+message GetNodesReply {
+  repeated Node nodes = 1;
 }
 
 message Instance {
-  string nodeName = 1;
-  string instanceName = 2;
+  string node_name = 1;
+  string instance_name = 2;
+  string state = 3;
+  repeated string ipv4 = 4;
+  string image = 5;
 }
 
-message ListReply {
+message Node {
+  string name = 1;
+  google.protobuf.Timestamp last_sync = 2;
+  repeated string ipv4 = 3;
+}
+
+message GetInstancesReply {
   repeated Instance instances = 1;
 }
 

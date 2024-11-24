@@ -16,11 +16,11 @@ type Config struct {
 	MultipassCertFilePath string
 	MasterAddr            string
 	ShellInstanceName     string
-	ShellNodeName         string
 	IsClient              bool
 	IsWorker              bool
 	Shell                 bool
-	List                  bool
+	Instances             bool
+	Nodes                 bool
 	IsMaster              bool
 }
 
@@ -61,9 +61,9 @@ func NewConfig() *Config {
 	flag.StringVar(&cfg.MultipassProxyBind, "multipass-proxy-bind", "localhost", "multipass proxy bind to listen on")
 	flag.StringVar(&cfg.MultipassCertFilePath, "multipass-cert-file", defaultMultipassCertFilePath, "multipass cert file for tls")
 	flag.StringVar(&cfg.MultipassKeyFilePath, "multipass-key-file", defaultMultiPassKeyFilePath, "multipass key file for tls")
-	flag.BoolVar(&cfg.List, "list", false, "list instances")
+	flag.BoolVar(&cfg.Instances, "instances", false, "list instances")
+	flag.BoolVar(&cfg.Nodes, "nodes", false, "list nodes")
 	flag.BoolVar(&cfg.Shell, "shell", false, "run as shell")
-	flag.StringVar(&cfg.ShellNodeName, "shell-node-name", "", "shell node name")
 	flag.StringVar(&cfg.ShellInstanceName, "shell-instance-name", "", "shell instance name")
 
 	flag.Parse()

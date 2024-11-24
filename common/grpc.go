@@ -45,6 +45,25 @@ func ListenBidiServer[Req any, Res any](stream grpc.BidiStreamingServer[Req, Res
 	return nil
 }
 
+func ListenClientStreaming[Req any, Res any](stream grpc.ClientStreamingServer[Req, Res], f func(req *Req) error) error {
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return err
+		}
+
+		if err = f(req); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func ListenBidiClient[Req any, Res any](stream grpc.BidiStreamingClient[Req, Res], f func(res *Res) error) error {
 	for {
 		res, err := stream.Recv()

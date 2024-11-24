@@ -4,18 +4,24 @@ package cluster;
 option go_package = "./cluster";
 
 service Rpc {
-  rpc join (stream JoinRequest) returns (stream JoinReply) {};
+  rpc sync (stream SyncRequest) returns (stream SyncReply) {};
 }
 
-message AgentInfo {
-  int64 port = 1;
+message Instance {
+  string name = 1;
+  string state = 2;
+  repeated string ipv4 = 3;
+  string image = 4;
 }
 
-message JoinRequest {
-  string node_name = 1;
-  AgentInfo agent_info = 2;
+message State {
+  repeated Instance instances = 1;
 }
 
-message JoinReply {
+message SyncRequest {
+  State state = 1;
+}
+
+message SyncReply {
   string uuid = 1;
 }

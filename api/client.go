@@ -23,8 +23,9 @@ type client struct {
 }
 
 type Client interface {
-	List(ctx context.Context) (*ListReply, error)
-	Shell(ctx context.Context, nodeName string, instanceName string) error
+	Instances(ctx context.Context) (*GetInstancesReply, error)
+	Nodes(ctx context.Context) (*GetNodesReply, error)
+	Shell(ctx context.Context, instanceName string) error
 	Close() error
 }
 
@@ -32,8 +33,12 @@ func (c *client) Close() error {
 	return c.conn.Close()
 }
 
-func (c *client) List(ctx context.Context) (*ListReply, error) {
-	return c.client.List(ctx, &ListRequest{})
+func (c *client) Instances(ctx context.Context) (*GetInstancesReply, error) {
+	return c.client.Instances(ctx, &GetInstancesRequest{})
+}
+
+func (c *client) Nodes(ctx context.Context) (*GetNodesReply, error) {
+	return c.client.Nodes(ctx, &GetNodesRequest{})
 }
 
 type shellRequestWriter struct {
@@ -82,7 +87,7 @@ func NewShellRequestWriter(
 	return writer, nil
 }
 
-func (c *client) Shell(ctx context.Context, nodeName string, instanceName string) error {
+func (c *client) Shell(ctx context.Context, instanceName string) error {
 	stdInFd := int(os.Stdin.Fd())
 	stdOutFd := int(os.Stdout.Fd())
 
@@ -92,7 +97,6 @@ func (c *client) Shell(ctx context.Context, nodeName string, instanceName string
 	}
 
 	ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs(
-		"nodeName", nodeName,
 		"instanceName", instanceName,
 		"width", fmt.Sprintf("%d", width),
 		"height", fmt.Sprintf("%d", height),
