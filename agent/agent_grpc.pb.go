@@ -31,7 +31,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RpcClient interface {
 	Instances(ctx context.Context, in *GetInstancesRequest, opts ...grpc.CallOption) (*GetInstancesReply, error)
-	Info(ctx context.Context, in *GetInfoRequest, opts ...grpc.CallOption) (*GetInfoReply, error)
+	Info(ctx context.Context, in *common.GetInfoRequest, opts ...grpc.CallOption) (*common.GetInfoReply, error)
 	Shell(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[common.ShellRequest, common.ShellReply], error)
 	Launch(ctx context.Context, in *common.LaunchRequest, opts ...grpc.CallOption) (*common.LaunchReply, error)
 }
@@ -54,9 +54,9 @@ func (c *rpcClient) Instances(ctx context.Context, in *GetInstancesRequest, opts
 	return out, nil
 }
 
-func (c *rpcClient) Info(ctx context.Context, in *GetInfoRequest, opts ...grpc.CallOption) (*GetInfoReply, error) {
+func (c *rpcClient) Info(ctx context.Context, in *common.GetInfoRequest, opts ...grpc.CallOption) (*common.GetInfoReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetInfoReply)
+	out := new(common.GetInfoReply)
 	err := c.cc.Invoke(ctx, Rpc_Info_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (c *rpcClient) Launch(ctx context.Context, in *common.LaunchRequest, opts .
 // for forward compatibility.
 type RpcServer interface {
 	Instances(context.Context, *GetInstancesRequest) (*GetInstancesReply, error)
-	Info(context.Context, *GetInfoRequest) (*GetInfoReply, error)
+	Info(context.Context, *common.GetInfoRequest) (*common.GetInfoReply, error)
 	Shell(grpc.BidiStreamingServer[common.ShellRequest, common.ShellReply]) error
 	Launch(context.Context, *common.LaunchRequest) (*common.LaunchReply, error)
 	mustEmbedUnimplementedRpcServer()
@@ -108,7 +108,7 @@ type UnimplementedRpcServer struct{}
 func (UnimplementedRpcServer) Instances(context.Context, *GetInstancesRequest) (*GetInstancesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Instances not implemented")
 }
-func (UnimplementedRpcServer) Info(context.Context, *GetInfoRequest) (*GetInfoReply, error) {
+func (UnimplementedRpcServer) Info(context.Context, *common.GetInfoRequest) (*common.GetInfoReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Info not implemented")
 }
 func (UnimplementedRpcServer) Shell(grpc.BidiStreamingServer[common.ShellRequest, common.ShellReply]) error {
@@ -157,7 +157,7 @@ func _Rpc_Instances_Handler(srv interface{}, ctx context.Context, dec func(inter
 }
 
 func _Rpc_Info_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetInfoRequest)
+	in := new(common.GetInfoRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func _Rpc_Info_Handler(srv interface{}, ctx context.Context, dec func(interface{
 		FullMethod: Rpc_Info_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RpcServer).Info(ctx, req.(*GetInfoRequest))
+		return srv.(RpcServer).Info(ctx, req.(*common.GetInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

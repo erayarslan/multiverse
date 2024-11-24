@@ -10,6 +10,7 @@ import "agent/agent.proto";
 service Rpc {
   rpc instances (GetInstancesRequest) returns (GetInstancesReply) {};
   rpc nodes (GetNodesRequest) returns (GetNodesReply) {};
+  rpc info (GetInfoRequest) returns (GetInfoReply) {};
   rpc shell (stream common.ShellRequest) returns (stream common.ShellReply) {};
   rpc launch (common.LaunchRequest) returns (common.LaunchReply) {};
 }
@@ -38,4 +39,16 @@ message GetInstancesRequest {
 
 message GetInstancesReply {
   repeated Instance instances = 1;
+}
+
+message GetInfoInstance {
+  string node_name = 1;
+  common.GetInfoInstance instance = 2;
+}
+
+message GetInfoRequest {
+}
+
+message GetInfoReply {
+  repeated GetInfoInstance instances = 1;
 }

@@ -33,6 +33,31 @@ func (s *server) Serve() error {
 	return s.grpcServer.Serve(s.listener)
 }
 
+func (s *server) Info(ctx context.Context, _ *GetInfoRequest) (*GetInfoReply, error) {
+	getInfoReply := &GetInfoReply{
+		Instances: make([]*GetInfoInstance, 0),
+	}
+
+	s.clusterServer.IterateWorkers(func(workerInfo *cluster.WorkerInfo) bool {
+		info, err := workerInfo.AgentClient.Info(ctx, &common.GetInfoRequest{})
+		if err != nil {
+			log.Printf("failed to get info: %v", err)
+			return true
+		}
+
+		for _, instance := range info.Instances {
+			getInfoReply.Instances = append(getInfoReply.Instances, &GetInfoInstance{
+				NodeName: workerInfo.NodeName,
+				Instance: instance,
+			})
+		}
+
+		return true
+	})
+
+	return getInfoReply, nil
+}
+
 func (s *server) Instances(_ context.Context, _ *GetInstancesRequest) (*GetInstancesReply, error) {
 	getInstancesReply := &GetInstancesReply{
 		Instances: make([]*Instance, 0),

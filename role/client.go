@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 
@@ -64,9 +65,55 @@ func (c *client) nodes() {
 			n.Name,
 			strings.Join(n.Ipv4, "\n"),
 			fmt.Sprintf("%d", n.Resource.Cpu.Available),
-			fmt.Sprintf("%vMb", n.Resource.Memory.Available/1024/1024),
+			fmt.Sprintf("%vGb", n.Resource.Memory.Available/1024/1024/1024),
 			fmt.Sprintf("%vGb", n.Resource.Disk.Available/1024/1024/1024),
 			n.LastSync.AsTime().Format("2006-01-02 15:04:05 MST"),
+		)
+		if err != nil {
+			return
+		}
+	}
+
+	err = w.Flush()
+	if err != nil {
+		return
+	}
+}
+
+func (c *client) info() {
+	getInfoReply, err := c.apiClient.Info(context.Background())
+	if err != nil {
+		log.Fatalf("error while info: %v", err)
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 10, 1, 5, ' ', 0)
+
+	fs := "%s\t%s\t%s\t%s\t%s\t%s\n"
+	_, err = fmt.Fprintf(w, fs, "Node Name", "Instance Name", "Cpu", "Load", "Disk", "Memory")
+	if err != nil {
+		return
+	}
+	for _, n := range getInfoReply.Instances {
+		diskUsage, err := strconv.ParseFloat(n.Instance.DiskUsage, 64)
+		if err != nil {
+			log.Fatalf("error while parsing disk usage: %v", err)
+		}
+		diskTotal, err := strconv.ParseFloat(n.Instance.DiskTotal, 64)
+		if err != nil {
+			log.Fatalf("error while parsing disk total: %v", err)
+		}
+		memoryUsage, err := strconv.ParseFloat(n.Instance.MemoryUsage, 64)
+		if err != nil {
+			log.Fatalf("error while parsing memory usage: %v", err)
+		}
+		memoryTotal, err := strconv.ParseFloat(n.Instance.MemoryTotal, 64)
+		if err != nil {
+			log.Fatalf("error while parsing memory total: %v", err)
+		}
+
+		_, err = fmt.Fprintf(w, fs, n.NodeName, n.Instance.Name, n.Instance.CpuCount, n.Instance.Load,
+			fmt.Sprintf("%.1fGiB out of %.1fGiB", diskUsage/1024/1024/1024, diskTotal/1024/1024/1024),
+			fmt.Sprintf("%.1fGiB out of %.1fGiB", memoryUsage/1024/1024/1024, memoryTotal/1024/1024/1024),
 		)
 		if err != nil {
 			return
@@ -87,7 +134,18 @@ func (c *client) shell() {
 }
 
 func (c *client) launch() {
-	_, err := c.apiClient.Launch(context.Background(), &common.LaunchRequest{InstanceName: c.cfg.LaunchInstanceName})
+	// parse c.cfg.LaunchNumCores to int32
+	numCores, err := strconv.ParseInt(c.cfg.LaunchNumCores, 10, 32)
+	if err != nil {
+		log.Fatalf("error while parsing num cores: %v", err)
+	}
+
+	_, err = c.apiClient.Launch(context.Background(), &common.LaunchRequest{
+		InstanceName: c.cfg.LaunchInstanceName,
+		NumCores:     int32(numCores),
+		MemSize:      c.cfg.LaunchMemSize,
+		DiskSpace:    c.cfg.LaunchDiskSpace,
+	})
 	if err != nil {
 		log.Fatalf("error while launch: %v", err)
 	}
@@ -113,6 +171,8 @@ func (c *client) Execute() error {
 		c.shell()
 	case c.cfg.Launch:
 		c.launch()
+	case c.cfg.Info:
+		c.info()
 	}
 
 	c.doneCh <- struct{}{}

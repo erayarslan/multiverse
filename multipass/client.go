@@ -25,7 +25,8 @@ type instance struct {
 type Client interface {
 	List(ctx context.Context) ([]*instance, error)
 	SSHInfo(ctx context.Context, instanceName string) (*SSHInfo, error)
-	Launch(ctx context.Context, instanceName string) error
+	Launch(ctx context.Context, request *common.LaunchRequest) (*common.LaunchReply, error)
+	Info(ctx context.Context, request *common.GetInfoRequest) (*common.GetInfoReply, error)
 }
 
 func (s InstanceStatus_Status) ToString() string {
@@ -53,20 +54,60 @@ func (s InstanceStatus_Status) ToString() string {
 	}
 }
 
-func (c *client) Launch(ctx context.Context, instanceName string) error {
+func (c *client) Info(ctx context.Context, _ *common.GetInfoRequest) (*common.GetInfoReply, error) {
+	stream, err := c.rpcClient.Info(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := common.ExecuteOnceWithBidiClient(stream, &InfoRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	getInfoReply := &common.GetInfoReply{
+		Instances: make([]*common.GetInfoInstance, 0),
+	}
+	for _, detail := range res.Details {
+		if instanceExtraInfo, ok := detail.ExtraInfo.(*DetailedInfoItem_InstanceInfo); ok {
+			getInfoReply.Instances = append(getInfoReply.Instances, &common.GetInfoInstance{
+				Id:                instanceExtraInfo.InstanceInfo.Id,
+				Name:              detail.Name,
+				MemoryUsage:       instanceExtraInfo.InstanceInfo.MemoryUsage,
+				MemoryTotal:       detail.MemoryTotal,
+				DiskUsage:         instanceExtraInfo.InstanceInfo.DiskUsage,
+				DiskTotal:         detail.DiskTotal,
+				Load:              instanceExtraInfo.InstanceInfo.Load,
+				CpuTimes:          instanceExtraInfo.InstanceInfo.CpuTimes,
+				CpuCount:          detail.CpuCount,
+				ImageRelease:      instanceExtraInfo.InstanceInfo.ImageRelease,
+				CurrentRelease:    instanceExtraInfo.InstanceInfo.CurrentRelease,
+				Uptime:            instanceExtraInfo.InstanceInfo.Uptime,
+				CreationTimestamp: instanceExtraInfo.InstanceInfo.CreationTimestamp,
+			})
+		}
+	}
+
+	return getInfoReply, nil
+}
+
+func (c *client) Launch(ctx context.Context, request *common.LaunchRequest) (*common.LaunchReply, error) {
 	stream, err := c.rpcClient.Launch(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	_, err = common.ExecuteOnceWithBidiClient(stream, &LaunchRequest{
-		InstanceName: instanceName,
+		InstanceName: request.InstanceName,
+		NumCores:     request.NumCores,
+		MemSize:      request.MemSize,
+		DiskSpace:    request.DiskSpace,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &common.LaunchReply{}, nil
 }
 
 func (c *client) List(ctx context.Context) ([]*instance, error) {
@@ -97,7 +138,7 @@ func (c *client) List(ctx context.Context) ([]*instance, error) {
 				Name:  multipassInstance.Name,
 				State: multipassInstance.InstanceStatus.Status.ToString(),
 				Ipv4:  multipassInstance.Ipv4,
-				Image: fmt.Sprintf("Ubuntu %s", multipassInstance.CurrentRelease),
+				Image: multipassInstance.CurrentRelease,
 			})
 		}
 	}

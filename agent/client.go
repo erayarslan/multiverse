@@ -15,23 +15,23 @@ type client struct {
 }
 
 type Client interface {
-	Instances(ctx context.Context) (*GetInstancesReply, error)
-	Info(ctx context.Context) (*GetInfoReply, error)
+	Instances(ctx context.Context, request *GetInstancesRequest) (*GetInstancesReply, error)
+	Info(ctx context.Context, request *common.GetInfoRequest) (*common.GetInfoReply, error)
 	Shell(ctx context.Context) (grpc.BidiStreamingClient[common.ShellRequest, common.ShellReply], error)
 	Close() error
-	Launch(ctx context.Context, launchRequest *common.LaunchRequest) (*common.LaunchReply, error)
+	Launch(ctx context.Context, request *common.LaunchRequest) (*common.LaunchReply, error)
 }
 
 func (c *client) Close() error {
 	return c.conn.Close()
 }
 
-func (c *client) Instances(ctx context.Context) (*GetInstancesReply, error) {
-	return c.client.Instances(ctx, &GetInstancesRequest{})
+func (c *client) Instances(ctx context.Context, request *GetInstancesRequest) (*GetInstancesReply, error) {
+	return c.client.Instances(ctx, request)
 }
 
-func (c *client) Info(ctx context.Context) (*GetInfoReply, error) {
-	return c.client.Info(ctx, &GetInfoRequest{})
+func (c *client) Info(ctx context.Context, request *common.GetInfoRequest) (*common.GetInfoReply, error) {
+	return c.client.Info(ctx, request)
 }
 
 func (c *client) Launch(ctx context.Context, launchRequest *common.LaunchRequest) (*common.LaunchReply, error) {

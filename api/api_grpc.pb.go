@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	Rpc_Instances_FullMethodName = "/api.Rpc/instances"
 	Rpc_Nodes_FullMethodName     = "/api.Rpc/nodes"
+	Rpc_Info_FullMethodName      = "/api.Rpc/info"
 	Rpc_Shell_FullMethodName     = "/api.Rpc/shell"
 	Rpc_Launch_FullMethodName    = "/api.Rpc/launch"
 )
@@ -32,6 +33,7 @@ const (
 type RpcClient interface {
 	Instances(ctx context.Context, in *GetInstancesRequest, opts ...grpc.CallOption) (*GetInstancesReply, error)
 	Nodes(ctx context.Context, in *GetNodesRequest, opts ...grpc.CallOption) (*GetNodesReply, error)
+	Info(ctx context.Context, in *GetInfoRequest, opts ...grpc.CallOption) (*GetInfoReply, error)
 	Shell(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[common.ShellRequest, common.ShellReply], error)
 	Launch(ctx context.Context, in *common.LaunchRequest, opts ...grpc.CallOption) (*common.LaunchReply, error)
 }
@@ -58,6 +60,16 @@ func (c *rpcClient) Nodes(ctx context.Context, in *GetNodesRequest, opts ...grpc
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetNodesReply)
 	err := c.cc.Invoke(ctx, Rpc_Nodes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *rpcClient) Info(ctx context.Context, in *GetInfoRequest, opts ...grpc.CallOption) (*GetInfoReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetInfoReply)
+	err := c.cc.Invoke(ctx, Rpc_Info_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -93,6 +105,7 @@ func (c *rpcClient) Launch(ctx context.Context, in *common.LaunchRequest, opts .
 type RpcServer interface {
 	Instances(context.Context, *GetInstancesRequest) (*GetInstancesReply, error)
 	Nodes(context.Context, *GetNodesRequest) (*GetNodesReply, error)
+	Info(context.Context, *GetInfoRequest) (*GetInfoReply, error)
 	Shell(grpc.BidiStreamingServer[common.ShellRequest, common.ShellReply]) error
 	Launch(context.Context, *common.LaunchRequest) (*common.LaunchReply, error)
 	mustEmbedUnimplementedRpcServer()
@@ -110,6 +123,9 @@ func (UnimplementedRpcServer) Instances(context.Context, *GetInstancesRequest) (
 }
 func (UnimplementedRpcServer) Nodes(context.Context, *GetNodesRequest) (*GetNodesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Nodes not implemented")
+}
+func (UnimplementedRpcServer) Info(context.Context, *GetInfoRequest) (*GetInfoReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Info not implemented")
 }
 func (UnimplementedRpcServer) Shell(grpc.BidiStreamingServer[common.ShellRequest, common.ShellReply]) error {
 	return status.Errorf(codes.Unimplemented, "method Shell not implemented")
@@ -174,6 +190,24 @@ func _Rpc_Nodes_Handler(srv interface{}, ctx context.Context, dec func(interface
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Rpc_Info_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RpcServer).Info(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Rpc_Info_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RpcServer).Info(ctx, req.(*GetInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Rpc_Shell_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(RpcServer).Shell(&grpc.GenericServerStream[common.ShellRequest, common.ShellReply]{ServerStream: stream})
 }
@@ -213,6 +247,10 @@ var Rpc_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "nodes",
 			Handler:    _Rpc_Nodes_Handler,
+		},
+		{
+			MethodName: "info",
+			Handler:    _Rpc_Info_Handler,
 		},
 		{
 			MethodName: "launch",

@@ -3,6 +3,8 @@ package common;
 
 option go_package = "github.com/erayarslan/multiverse/common";
 
+import "google/protobuf/timestamp.proto";
+
 message LaunchRequest {
   string instance_name = 1;
   int32 num_cores = 2;
@@ -11,6 +13,29 @@ message LaunchRequest {
 }
 
 message LaunchReply {
+}
+
+message GetInfoRequest {
+}
+
+message GetInfoInstance {
+  string id = 1;
+  string name = 2;
+  string memory_usage = 3;
+  string memory_total = 4;
+  string disk_usage = 5;
+  string disk_total = 6;
+  string load = 7;
+  string cpu_times = 8;
+  string cpu_count = 9;
+  string image_release = 10;
+  string current_release = 11;
+  string uptime = 12;
+  google.protobuf.Timestamp creation_timestamp = 13;
+}
+
+message GetInfoReply {
+  repeated GetInfoInstance instances = 1;
 }
 
 message ShellRequest {

@@ -26,6 +26,7 @@ type client struct {
 type Client interface {
 	Instances(ctx context.Context) (*GetInstancesReply, error)
 	Nodes(ctx context.Context) (*GetNodesReply, error)
+	Info(ctx context.Context) (*GetInfoReply, error)
 	Shell(ctx context.Context, instanceName string) error
 	Launch(ctx context.Context, launchRequest *common.LaunchRequest) (*common.LaunchReply, error)
 	Close() error
@@ -45,6 +46,10 @@ func (c *client) Nodes(ctx context.Context) (*GetNodesReply, error) {
 
 func (c *client) Launch(ctx context.Context, launchRequest *common.LaunchRequest) (*common.LaunchReply, error) {
 	return c.client.Launch(ctx, launchRequest)
+}
+
+func (c *client) Info(ctx context.Context) (*GetInfoReply, error) {
+	return c.client.Info(ctx, &GetInfoRequest{})
 }
 
 type shellRequestWriter struct {

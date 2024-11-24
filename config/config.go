@@ -8,22 +8,26 @@ import (
 )
 
 type Config struct {
+	LaunchInstanceName    string
 	MultipassKeyFilePath  string
-	NodeName              string
-	APIServerAddr         string
 	MultipassAddr         string
 	MultipassProxyBind    string
 	MultipassCertFilePath string
 	MasterAddr            string
 	ShellInstanceName     string
-	LaunchInstanceName    string
-	IsClient              bool
+	APIServerAddr         string
+	NodeName              string
+	LaunchDiskSpace       string
+	LaunchMemSize         string
+	LaunchNumCores        string
+	IsMaster              bool
 	IsWorker              bool
 	Shell                 bool
 	Instances             bool
 	Nodes                 bool
 	Launch                bool
-	IsMaster              bool
+	Info                  bool
+	IsClient              bool
 }
 
 func NewConfig() *Config {
@@ -67,8 +71,12 @@ func NewConfig() *Config {
 	flag.BoolVar(&cfg.Nodes, "nodes", false, "list nodes")
 	flag.BoolVar(&cfg.Shell, "shell", false, "run as shell")
 	flag.BoolVar(&cfg.Launch, "launch", false, "launch instance")
-	flag.StringVar(&cfg.ShellInstanceName, "shell-instance-name", "", "shell instance name")
-	flag.StringVar(&cfg.LaunchInstanceName, "launch-instance-name", "", "launch instance name")
+	flag.BoolVar(&cfg.Info, "info", false, "get info")
+	flag.StringVar(&cfg.ShellInstanceName, "shell-instance-name", "primary", "shell instance name")
+	flag.StringVar(&cfg.LaunchInstanceName, "launch-instance-name", "primary", "launch instance name")
+	flag.StringVar(&cfg.LaunchNumCores, "launch-num-cores", "1", "launch instance num cores")
+	flag.StringVar(&cfg.LaunchMemSize, "launch-mem-size", "1G", "launch instance mem size")
+	flag.StringVar(&cfg.LaunchDiskSpace, "launch-disk-space", "4G", "launch instance disk space")
 
 	flag.Parse()
 

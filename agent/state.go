@@ -59,7 +59,6 @@ func (s *state) updateResources() {
 		log.Printf("error while getting virtual memory: %v", err)
 		return
 	}
-
 	cpuInfoStats, err := cpu.Info()
 	if err != nil {
 		log.Printf("error while getting cpu info: %v", err)
@@ -72,23 +71,10 @@ func (s *state) updateResources() {
 	}
 	totalCore := cpuInfoStats[0].Cores
 	availableCore := totalCore - int32(math.Ceil(float64(totalCore)*percents[0]/100))
-
-	partitions, err := disk.Partitions(true)
+	diskUsage, err := disk.Usage("/")
 	if err != nil {
-		log.Printf("error while getting disk partitions: %v", err)
+		log.Printf("error while getting disk usage: %v", err)
 		return
-	}
-
-	var diskUsageTotal uint64
-	var diskUsageFree uint64
-	for _, partition := range partitions {
-		diskUsageStat, err := disk.Usage(partition.Mountpoint)
-		if err != nil {
-			log.Printf("error while getting disk usage: %v", err)
-			return
-		}
-		diskUsageTotal += diskUsageStat.Total
-		diskUsageFree += diskUsageStat.Free
 	}
 
 	s.Resource = &Resource{
@@ -101,8 +87,8 @@ func (s *state) updateResources() {
 			Available: virtualMemoryStat.Available,
 		},
 		Disk: &Disk{
-			Total:     diskUsageTotal,
-			Available: diskUsageFree,
+			Total:     diskUsage.Total,
+			Available: diskUsage.Free,
 		},
 	}
 }

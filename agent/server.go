@@ -87,20 +87,12 @@ func (s *server) Instances(_ context.Context, _ *GetInstancesRequest) (*GetInsta
 	}, nil
 }
 
-func (s *server) Launch(_ context.Context, req *common.LaunchRequest) (*common.LaunchReply, error) {
-	if err := s.multipassClient.Launch(context.Background(), req.InstanceName); err != nil {
-		return nil, err
-	}
-
-	return &common.LaunchReply{}, nil
+func (s *server) Launch(ctx context.Context, req *common.LaunchRequest) (*common.LaunchReply, error) {
+	return s.multipassClient.Launch(ctx, req)
 }
 
-func (s *server) Info(_ context.Context, _ *GetInfoRequest) (*GetInfoReply, error) {
-	resource := s.state.GetState().Resource
-
-	return &GetInfoReply{
-		Resource: resource,
-	}, nil
+func (s *server) Info(ctx context.Context, req *common.GetInfoRequest) (*common.GetInfoReply, error) {
+	return s.multipassClient.Info(ctx, req)
 }
 
 type windowSize struct {
