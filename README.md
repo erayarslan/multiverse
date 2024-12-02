@@ -64,4 +64,8 @@ hostname      primary           1         0.07 0.02 0.00     2.5GiB out of 4.0Gi
 
 ## Architecture
 
-![architecture](.assets/architecture.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".assets/architecture-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset=".assets/architecture-normal.svg">
+  <img alt="Multiverse Architecture" src=".assets/architecture-dark.svg">
+</picture>
