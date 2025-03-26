@@ -69,8 +69,11 @@ func (s *state) updateResources() {
 		log.Printf("error while getting cpu percent: %v", err)
 		return
 	}
-	totalCore := cpuInfoStats[0].Cores
-	availableCore := totalCore - int32(math.Ceil(float64(totalCore)*percents[0]/100))
+	var totalCores int32
+	for _, cpuInfo := range cpuInfoStats {
+		totalCores += cpuInfo.Cores
+	}
+	availableCore := totalCores - int32(math.Ceil(float64(totalCores)*percents[0]/100))
 	diskUsage, err := disk.Usage("/")
 	if err != nil {
 		log.Printf("error while getting disk usage: %v", err)
@@ -79,7 +82,7 @@ func (s *state) updateResources() {
 
 	s.Resource = &Resource{
 		Cpu: &CPU{
-			Total:     totalCore,
+			Total:     totalCores,
 			Available: availableCore,
 		},
 		Memory: &Memory{
